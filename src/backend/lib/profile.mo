@@ -1,4 +1,5 @@
 import Map "mo:core/Map";
+import Nat "mo:core/Nat";
 import Time "mo:core/Time";
 import ProfileTypes "../types/profile";
 import CommonTypes "../types/common";
@@ -122,7 +123,7 @@ module {
     itemId : Text
   ) : ProfileTypes.UserProfile {
     let existing = getOrCreate(profiles, userId);
-    let newXp = if (existing.totalXp >= cost) { existing.totalXp - cost } else { 0 };
+    let newXp = Nat.sub(existing.totalXp, cost);
     let newLevel = computeLevel(newXp);
     let currentInventory : [Text] = switch (existing.inventory) {
       case (?inv) { inv };

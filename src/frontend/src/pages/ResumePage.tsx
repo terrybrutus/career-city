@@ -619,7 +619,7 @@ export default function ResumePage() {
       data-ocid="resume.page"
       className="relative w-full"
       style={{
-        height: "100vh",
+        height: "100dvh",
         overflowY: "auto",
         background: "#0d0d1a",
         fontFamily: "var(--font-display), monospace",

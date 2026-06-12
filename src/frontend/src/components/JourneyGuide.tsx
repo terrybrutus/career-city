@@ -84,13 +84,14 @@ export default function JourneyGuide() {
 
   return (
     <aside
+      className="journey-guide"
       aria-label="Current journey objective"
       style={{
         position: "absolute",
         top: 8,
         left: 8,
         zIndex: 1000,
-        width: collapsed ? 48 : "min(340px, calc(100vw - 90px))",
+        width: collapsed ? 48 : "min(340px, calc(100dvw - 90px))",
         background: "rgba(4,4,20,0.96)",
         border: "2px solid rgba(255,170,0,0.8)",
         boxShadow: "0 0 16px rgba(255,170,0,0.2)",

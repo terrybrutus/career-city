@@ -405,7 +405,7 @@ export default function InterviewPage() {
       data-ocid="interview.page"
       className="scanline"
       style={{
-        minHeight: "100vh",
+        minHeight: "100dvh",
         background: "#050505",
         color: "#f0f0f0",
         fontFamily: "var(--font-display), monospace",

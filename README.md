@@ -43,6 +43,11 @@ store a provider key with Internet Identity profile data.
 The next safe AI step is a backend-only provider adapter after Caffeine
 supports managed secrets and approved HTTPS outcalls for the provider.
 
+The backend includes an explicit one-time upgrade migration that discards only
+the obsolete Groq key, endpoint, model, cycles, and HTTP actor fields from the
+older canister schema. Player profiles, resumes, quests, and other application
+state continue through the normal stable-state upgrade path.
+
 ## Remaining Expansion Work
 
 The first chapter is playable, but expanded districts, a complete licensed

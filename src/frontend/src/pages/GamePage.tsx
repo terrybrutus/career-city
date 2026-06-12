@@ -14,6 +14,7 @@ import { ItemShopScene } from "@/game/scenes/ItemShopScene";
 import { PreloadScene } from "@/game/scenes/PreloadScene";
 import { ResumeTailorScene } from "@/game/scenes/ResumeTailorScene";
 import { TownScene } from "@/game/scenes/TownScene";
+import { useProfile } from "@/hooks/useProfile";
 import { useQuests } from "@/hooks/useQuests";
 import type { NPC } from "@/types/game";
 import { useNavigate } from "@tanstack/react-router";
@@ -21,11 +22,13 @@ import Phaser from "phaser";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 // ─────────────────────────────────────────────────────
-// Unified HUD Panel — top-right, all controls grouped
+// Unified control dock — one mutually exclusive panel at a time
 // ─────────────────────────────────────────────────────
-type HUDTab = "quests" | "music" | "howto" | null;
+type HUDTab = "status" | "quests" | "music" | "howto" | null;
 
 function UnifiedHUDPanel({ onPassport }: { onPassport: () => void }) {
+  const { data: profile } = useProfile();
+  const { quests } = useQuests();
   const [activeTab, setActiveTab] = useState<HUDTab>(null);
   const [trackName, setTrackName] = useState("—");
   const [paused, setPaused] = useState(false);
@@ -43,8 +46,34 @@ function UnifiedHUDPanel({ onPassport }: { onPassport: () => void }) {
     return () => clearInterval(id);
   }, []);
 
+  useEffect(() => {
+    const close = () => setActiveTab(null);
+    const unsubs = [
+      GameBridge.on("careerToolOpen", close),
+      GameBridge.on("dialogueOpened", close),
+    ];
+    return () => {
+      for (const unsub of unsubs) unsub();
+    };
+  }, []);
+
   const toggleTab = (tab: HUDTab) =>
     setActiveTab((cur) => (cur === tab ? null : tab));
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setActiveTab(null);
+      if (
+        (event.key === "q" || event.key === "Q") &&
+        !(event.target instanceof HTMLInputElement) &&
+        !(event.target instanceof HTMLTextAreaElement)
+      ) {
+        setActiveTab((current) => (current === "quests" ? null : "quests"));
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   const panelBg = "rgba(4,4,20,0.95)";
   const borderGreen = "rgba(57,255,20,0.5)";
@@ -69,15 +98,14 @@ function UnifiedHUDPanel({ onPassport }: { onPassport: () => void }) {
 
   return (
     <div
+      className="control-dock"
       data-ocid="hud.unified_panel"
       style={{
-        position: "absolute",
-        top: 8,
-        right: 8,
+        position: "fixed",
         zIndex: 1000,
         display: "flex",
         flexDirection: "column",
-        alignItems: "flex-end",
+        alignItems: "center",
         gap: 0,
         fontFamily: '"Space Grotesk", monospace',
         pointerEvents: "auto",
@@ -97,11 +125,24 @@ function UnifiedHUDPanel({ onPassport }: { onPassport: () => void }) {
       >
         <button
           type="button"
+          title="Player status"
+          aria-label="Toggle player status"
+          data-ocid="hud.status_tab"
+          style={iconBtnStyle(activeTab === "status")}
+          onClick={() => toggleTab("status")}
+        >
+          LV
+        </button>
+        <button
+          type="button"
           title="Career Passport"
           aria-label="Open Career Passport"
           data-ocid="hud.passport_button"
           style={iconBtnStyle(false)}
-          onClick={onPassport}
+          onClick={() => {
+            setActiveTab(null);
+            onPassport();
+          }}
         >
           ID
         </button>
@@ -146,28 +187,41 @@ function UnifiedHUDPanel({ onPassport }: { onPassport: () => void }) {
             borderTop: "none",
             borderRadius: "0 0 4px 4px",
             padding: "10px 12px",
-            minWidth: 220,
-            maxWidth: 280,
+            width: "min(420px, calc(100dvw - 24px))",
+            maxHeight: "min(55dvh, 460px)",
+            overflowY: "auto",
             boxShadow: "0 4px 16px rgba(57,255,20,0.12)",
           }}
         >
+          {activeTab === "status" && (
+            <div style={{ color: dim, fontSize: 13 }}>
+              <PanelTitle>PLAYER STATUS</PanelTitle>
+              <div className="dock-stat-grid">
+                <span>Level</span>
+                <strong>{profile?.careerLevel ?? 1}</strong>
+                <span>Title</span>
+                <strong>{profile?.levelTitle ?? "Intern"}</strong>
+                <span>XP</span>
+                <strong>{profile?.xp ?? 0}</strong>
+                <span>Items</span>
+                <strong>{profile?.inventory.length ?? 0}</strong>
+              </div>
+            </div>
+          )}
           {activeTab === "quests" && (
             <div style={{ color: dim, fontSize: 13 }}>
-              <div
-                style={{
-                  color: green,
-                  fontSize: 14,
-                  marginBottom: 6,
-                  fontWeight: 700,
-                }}
-              >
-                QUEST LOG
-              </div>
-              <div>Talk to NPCs around town to unlock quests and earn XP.</div>
-              <div style={{ marginTop: 8, color: dim, fontSize: 12 }}>
-                Press <span style={{ color: green }}>Q</span> to toggle the full
-                quest log.
-              </div>
+              <PanelTitle>QUEST LOG</PanelTitle>
+              {quests.length === 0 ? (
+                <div>Talk to NPCs around town to unlock quests.</div>
+              ) : (
+                quests.map((quest) => (
+                  <div className="dock-quest" key={quest.questId}>
+                    <strong>{quest.title}</strong>
+                    <span>{quest.status}</span>
+                    <small>{quest.description}</small>
+                  </div>
+                ))
+              )}
             </div>
           )}
           {activeTab === "music" && (
@@ -311,6 +365,21 @@ function UnifiedHUDPanel({ onPassport }: { onPassport: () => void }) {
   );
 }
 
+function PanelTitle({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      style={{
+        color: "#39ff14",
+        fontSize: 14,
+        marginBottom: 8,
+        fontWeight: 700,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
 // ─────────────────────────────────────────────────────
 // Dialogue Overlay (React, rendered on top of canvas)
 // ─────────────────────────────────────────────────────
@@ -341,8 +410,8 @@ function DialogueOverlay({
       className="absolute bottom-20 left-1/2 z-40"
       style={{
         transform: "translateX(-50%)",
-        width: "min(560px, calc(100vw - 32px))",
-        maxWidth: "calc(100vw - 32px)",
+        width: "min(560px, calc(100dvw - 32px))",
+        maxWidth: "calc(100dvw - 32px)",
         boxSizing: "border-box",
       }}
       data-ocid="dialogue.panel"
@@ -578,8 +647,13 @@ export default function GamePage() {
         // Always reset dialogueIndex to 0 when a new NPC opens dialogue.
         // This prevents stale index from a previous NPC causing an undefined read.
         setDialogueIndex(0);
-        setActiveNPC(npcData);
-        if (npcData.id === "ed_recruiter") setRecruiterOpen(true);
+        if (npcData.id === "ed_recruiter") {
+          setActiveNPC(null);
+          setPassportOpen(false);
+          setRecruiterOpen(true);
+        } else {
+          setActiveNPC(npcData);
+        }
       }
     });
 
@@ -590,6 +664,12 @@ export default function GamePage() {
     const unsubToolOpen = GameBridge.on("careerToolOpen", (data) => {
       const d = data as { tool: string; npcId: string };
       if (d?.tool) {
+        if (d.tool === "passport") {
+          setActiveTool("passport");
+          return;
+        }
+        setPassportOpen(false);
+        setRecruiterOpen(false);
         setActiveNPC(null);
         setDialogueIndex(0);
         setActiveTool(d.tool);
@@ -614,6 +694,8 @@ export default function GamePage() {
       if (e.key === "Escape") {
         if (passportOpen) {
           setPassportOpen(false);
+          setActiveTool(null);
+          GameBridge.emit("careerToolClose", undefined);
         } else if (recruiterOpen) {
           setRecruiterOpen(false);
         } else if (activeTool) {
@@ -699,8 +781,8 @@ export default function GamePage() {
       data-ocid="game.canvas_target"
       style={{
         position: "relative",
-        width: "100vw",
-        height: "100vh",
+        width: "100%",
+        height: "100%",
         overflow: "hidden",
         background: "#0a0a0f",
         display: "flex",
@@ -720,8 +802,15 @@ export default function GamePage() {
         }}
       />
 
-      {/* Unified HUD Panel — top-right, all controls in one place */}
-      <UnifiedHUDPanel onPassport={() => setPassportOpen(true)} />
+      {/* Unified control dock */}
+      <UnifiedHUDPanel
+        onPassport={() => {
+          setRecruiterOpen(false);
+          setActiveNPC(null);
+          setPassportOpen(true);
+          GameBridge.emit("careerToolOpen", { tool: "passport" });
+        }}
+      />
       <JourneyGuide />
       <CareerProgressTracker />
 
@@ -761,7 +850,13 @@ export default function GamePage() {
         <ItemShopOverlay onClose={() => setActiveTool(null)} />
       )}
       {passportOpen && (
-        <CareerPassport onClose={() => setPassportOpen(false)} />
+        <CareerPassport
+          onClose={() => {
+            setPassportOpen(false);
+            setActiveTool(null);
+            GameBridge.emit("careerToolClose", undefined);
+          }}
+        />
       )}
       {recruiterOpen && (
         <RecruiterEncounter
