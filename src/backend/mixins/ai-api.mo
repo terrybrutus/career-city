@@ -3,9 +3,9 @@ import Text "mo:core/Text";
 mixin () {
   // Career City ships with dependable offline coaching. Provider-backed AI
   // must be added through a Caffeine-managed secret, never committed here.
-  func missing(label : Text, value : Text) : ?Text {
+  func missing(fieldName : Text, value : Text) : ?Text {
     if (value.size() == 0) {
-      ?("Please add " # label # " before continuing.")
+      ?("Please add " # fieldName # " before continuing.")
     } else {
       null
     };
