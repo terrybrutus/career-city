@@ -6,9 +6,9 @@ import JourneyGuide from "@/components/JourneyGuide";
 import RecruiterEncounter from "@/components/RecruiterEncounter";
 import ResumeTailorOverlay from "@/components/ResumeTailorOverlay";
 import { GameBridge } from "@/game/GameBridge";
-import { loadGameSettings, saveGameSettings } from "@/game/gameSettings";
 import { musicManager } from "@/game/MusicManager";
 import { CareerProgressTracker } from "@/game/careerProgress";
+import { loadGameSettings, saveGameSettings } from "@/game/gameSettings";
 import { CoverLetterScene } from "@/game/scenes/CoverLetterScene";
 import { InterviewCoachScene } from "@/game/scenes/InterviewCoachScene";
 import { ItemShopScene } from "@/game/scenes/ItemShopScene";
@@ -349,17 +349,41 @@ function UnifiedHUDPanel({ onPassport }: { onPassport: () => void }) {
               </div>
               <div className="settings-grid">
                 <label htmlFor="movement-speed">Movement speed</label>
-                <input id="movement-speed" type="range" min={0.75} max={2} step={0.05} value={settings.movementSpeed} onChange={(event) => {
-                  const next = { ...settings, movementSpeed: Number(event.target.value) };
-                  setSettings(next);
-                  saveGameSettings(next);
-                }} />
-                <label htmlFor="joystick-sensitivity">Joystick sensitivity</label>
-                <input id="joystick-sensitivity" type="range" min={0.75} max={2} step={0.05} value={settings.joystickSensitivity} onChange={(event) => {
-                  const next = { ...settings, joystickSensitivity: Number(event.target.value) };
-                  setSettings(next);
-                  saveGameSettings(next);
-                }} />
+                <input
+                  id="movement-speed"
+                  type="range"
+                  min={0.75}
+                  max={2}
+                  step={0.05}
+                  value={settings.movementSpeed}
+                  onChange={(event) => {
+                    const next = {
+                      ...settings,
+                      movementSpeed: Number(event.target.value),
+                    };
+                    setSettings(next);
+                    saveGameSettings(next);
+                  }}
+                />
+                <label htmlFor="joystick-sensitivity">
+                  Joystick sensitivity
+                </label>
+                <input
+                  id="joystick-sensitivity"
+                  type="range"
+                  min={0.75}
+                  max={2}
+                  step={0.05}
+                  value={settings.joystickSensitivity}
+                  onChange={(event) => {
+                    const next = {
+                      ...settings,
+                      joystickSensitivity: Number(event.target.value),
+                    };
+                    setSettings(next);
+                    saveGameSettings(next);
+                  }}
+                />
               </div>
             </div>
           )}
@@ -754,12 +778,15 @@ export default function GamePage() {
         setActiveNPC(null);
         setDialogueIndex(0);
         GameBridge.emit("dialogueClosed");
-        GameBridge.emit("careerToolOpen", { tool: payload, npcId: activeNPC?.id ?? "" });
+        GameBridge.emit("careerToolOpen", {
+          tool: payload,
+          npcId: activeNPC?.id ?? "",
+        });
       } else {
         handleAdvance();
       }
     },
-    [acceptQuest, navigate, handleAdvance],
+    [acceptQuest, navigate, handleAdvance, activeNPC?.id],
   );
 
   const handleClose = useCallback(() => {

@@ -1,5 +1,5 @@
-import Phaser from "phaser";
 import { loadGameSettings } from "@/game/gameSettings";
+import Phaser from "phaser";
 
 /**
  * BaseScene — abstract base class for all game scenes.
@@ -16,14 +16,17 @@ export abstract class BaseScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor(0x132313);
     this.applyResponsiveCamera();
     this.scale.on("resize", this.applyResponsiveCamera, this);
-    this.events.once("shutdown", () => this.scale.off("resize", this.applyResponsiveCamera, this));
+    this.events.once("shutdown", () =>
+      this.scale.off("resize", this.applyResponsiveCamera, this),
+    );
   }
 
   private applyResponsiveCamera(): void {
     const { width, height } = this.scale;
-    const zoom = width >= height
-      ? Math.max(0.9, Math.min(1.25, height / this.responsiveWorld.height))
-      : Math.max(0.72, Math.min(1, width / this.responsiveWorld.width));
+    const zoom =
+      width >= height
+        ? Math.max(0.9, Math.min(1.25, height / this.responsiveWorld.height))
+        : Math.max(0.72, Math.min(1, width / this.responsiveWorld.width));
     this.cameras.main.setZoom(zoom);
   }
 

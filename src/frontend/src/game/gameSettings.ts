@@ -13,7 +13,10 @@ const DEFAULTS: GameSettings = {
 
 export function loadGameSettings(): GameSettings {
   try {
-    return { ...DEFAULTS, ...JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}") };
+    return {
+      ...DEFAULTS,
+      ...JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}"),
+    };
   } catch {
     return DEFAULTS;
   }
@@ -21,5 +24,7 @@ export function loadGameSettings(): GameSettings {
 
 export function saveGameSettings(settings: GameSettings): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
-  window.dispatchEvent(new CustomEvent("career-city-settings", { detail: settings }));
+  window.dispatchEvent(
+    new CustomEvent("career-city-settings", { detail: settings }),
+  );
 }

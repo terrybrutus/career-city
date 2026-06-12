@@ -376,14 +376,25 @@ export abstract class BaseInteriorScene extends BaseScene {
 
     if (!this.isTouchDevice) return;
 
-    const interact = this.add.text(this.scale.width - 76, this.scale.height - 82, "INTERACT", {
-      fontSize: "13px", color: "#ffffff", backgroundColor: "#173117",
-      padding: { x: 14, y: 12 }, fontFamily: '"Space Grotesk", monospace',
-    }).setOrigin(0.5).setScrollFactor(0).setDepth(8100).setInteractive();
+    const interact = this.add
+      .text(this.scale.width - 76, this.scale.height - 82, "INTERACT", {
+        fontSize: "13px",
+        color: "#ffffff",
+        backgroundColor: "#173117",
+        padding: { x: 14, y: 12 },
+        fontFamily: '"Space Grotesk", monospace',
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(8100)
+      .setInteractive();
     interact.on("pointerdown", () => this.handleNpcInteract());
-    const positionInteract = () => interact.setPosition(this.scale.width - 76, this.scale.height - 82);
+    const positionInteract = () =>
+      interact.setPosition(this.scale.width - 76, this.scale.height - 82);
     this.scale.on("resize", positionInteract);
-    this.events.once("shutdown", () => this.scale.off("resize", positionInteract));
+    this.events.once("shutdown", () =>
+      this.scale.off("resize", positionInteract),
+    );
 
     this.input.on("pointerdown", (p: Phaser.Input.Pointer) => {
       if (p.x > this.scale.width / 2) return;
@@ -401,8 +412,14 @@ export abstract class BaseInteriorScene extends BaseScene {
       const dist = Math.sqrt(dx * dx + dy * dy);
       const maxDist = 60;
       if (dist > 0) {
-        const magnitude = Math.min(1, (dist / maxDist) * this.getJoystickSensitivity());
-        this.joystickVec = { x: (dx / dist) * magnitude, y: (dy / dist) * magnitude };
+        const magnitude = Math.min(
+          1,
+          (dist / maxDist) * this.getJoystickSensitivity(),
+        );
+        this.joystickVec = {
+          x: (dx / dist) * magnitude,
+          y: (dy / dist) * magnitude,
+        };
       }
     });
 
@@ -751,21 +768,31 @@ export abstract class BaseInteriorScene extends BaseScene {
       const npcData = NPCS.find((npc) => npc.id === this.npcEntry?.npcId);
       if (npcData) {
         const introductions: Record<string, string> = {
-          "resume-tailor": "I turn your real experience into a credential recruiters can understand. Ready to tailor your first resume?",
-          "cover-letter": "A strong cover letter connects your story to one specific opportunity. Ready to write yours?",
-          "interview-coach": "We train with real questions, clear feedback, and another attempt. Ready to practice?",
-          "item-shop": "Your XP buys useful career power-ups. I will explain exactly what each one changes.",
+          "resume-tailor":
+            "I turn your real experience into a credential recruiters can understand. Ready to tailor your first resume?",
+          "cover-letter":
+            "A strong cover letter connects your story to one specific opportunity. Ready to write yours?",
+          "interview-coach":
+            "We train with real questions, clear feedback, and another attempt. Ready to practice?",
+          "item-shop":
+            "Your XP buys useful career power-ups. I will explain exactly what each one changes.",
         };
         GameBridge.emit("dialogueOpened", {
           ...npcData,
-          dialogue: [{
-            speaker: npcData.name,
-            text: introductions[this.getToolId()] ?? "Ready to begin?",
-            options: [
-              { label: "[START]", action: "open_tool", payload: this.getToolId() },
-              { label: "[NOT YET]", action: "close" },
-            ],
-          }],
+          dialogue: [
+            {
+              speaker: npcData.name,
+              text: introductions[this.getToolId()] ?? "Ready to begin?",
+              options: [
+                {
+                  label: "[START]",
+                  action: "open_tool",
+                  payload: this.getToolId(),
+                },
+                { label: "[NOT YET]", action: "close" },
+              ],
+            },
+          ],
         });
       }
       return;

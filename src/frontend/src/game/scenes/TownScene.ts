@@ -1153,14 +1153,25 @@ export class TownScene extends BaseScene {
 
     if (!this.isTouchDevice) return;
 
-    const interact = this.add.text(this.scale.width - 76, this.scale.height - 82, "INTERACT", {
-      fontSize: "13px", color: "#ffffff", backgroundColor: "#173117",
-      padding: { x: 14, y: 12 }, fontFamily: '"Space Grotesk", monospace',
-    }).setOrigin(0.5).setScrollFactor(0).setDepth(8100).setInteractive();
+    const interact = this.add
+      .text(this.scale.width - 76, this.scale.height - 82, "INTERACT", {
+        fontSize: "13px",
+        color: "#ffffff",
+        backgroundColor: "#173117",
+        padding: { x: 14, y: 12 },
+        fontFamily: '"Space Grotesk", monospace',
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(8100)
+      .setInteractive();
     interact.on("pointerdown", () => this.handleInteract());
-    const positionInteract = () => interact.setPosition(this.scale.width - 76, this.scale.height - 82);
+    const positionInteract = () =>
+      interact.setPosition(this.scale.width - 76, this.scale.height - 82);
     this.scale.on("resize", positionInteract);
-    this.events.once("shutdown", () => this.scale.off("resize", positionInteract));
+    this.events.once("shutdown", () =>
+      this.scale.off("resize", positionInteract),
+    );
 
     this.input.on("pointerdown", (p: Phaser.Input.Pointer) => {
       if (p.x > this.scale.width / 2) return;
@@ -1178,8 +1189,14 @@ export class TownScene extends BaseScene {
       const dist = Math.sqrt(dx * dx + dy * dy);
       const maxDist = 60;
       if (dist > 0) {
-        const magnitude = Math.min(1, (dist / maxDist) * this.getJoystickSensitivity());
-        this.joystickVec = { x: (dx / dist) * magnitude, y: (dy / dist) * magnitude };
+        const magnitude = Math.min(
+          1,
+          (dist / maxDist) * this.getJoystickSensitivity(),
+        );
+        this.joystickVec = {
+          x: (dx / dist) * magnitude,
+          y: (dy / dist) * magnitude,
+        };
       }
     });
 
@@ -1412,7 +1429,9 @@ export class TownScene extends BaseScene {
       .text(
         this.scale.width / 2,
         this.scale.height - 39,
-        this.isTouchDevice ? `Tap INTERACT to talk to ${npc.name}` : `Press E or Enter to talk to ${npc.name}`,
+        this.isTouchDevice
+          ? `Tap INTERACT to talk to ${npc.name}`
+          : `Press E or Enter to talk to ${npc.name}`,
         {
           fontSize: "14px",
           color: "#ffffff",

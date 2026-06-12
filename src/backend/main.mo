@@ -13,7 +13,6 @@ import InterviewApi "mixins/interview-api";
 import QuestApi "mixins/quest-api";
 import AiApi "mixins/ai-api";
 import ItemApi "mixins/item-api";
-import { migration } "migration";
 
 
 
@@ -21,7 +20,6 @@ import { migration } "migration";
 
 
 
-(with migration)
 persistent actor {
   let profiles : Map.Map<CommonTypes.UserId, ProfileTypes.UserProfile> = Map.empty();
   let resumes : Map.Map<CommonTypes.UserId, List.List<ResumeTypes.Resume>> = Map.empty();

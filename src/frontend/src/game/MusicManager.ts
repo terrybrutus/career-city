@@ -23,7 +23,9 @@ export class MusicManager {
   private currentLocationId: GameLocationId | null = null;
   private pendingLocation: GameLocationId | null = null;
   private muted = localStorage.getItem("career_city_muted") === "true";
-  private volume = Number.parseFloat(localStorage.getItem("career_city_volume") ?? "0.35") || 0.35;
+  private volume =
+    Number.parseFloat(localStorage.getItem("career_city_volume") ?? "0.35") ||
+    0.35;
   private started = false;
   private paused = false;
 
@@ -57,11 +59,18 @@ export class MusicManager {
       if (!this.context || !this.gain || this.paused) return;
       const oscillator = this.context.createOscillator();
       const envelope = this.context.createGain();
-      oscillator.type = locationId === "interview_coach" ? "square" : "triangle";
+      oscillator.type =
+        locationId === "interview_coach" ? "square" : "triangle";
       oscillator.frequency.value = notes[index++ % notes.length] ?? 261.63;
       envelope.gain.setValueAtTime(0.001, this.context.currentTime);
-      envelope.gain.exponentialRampToValueAtTime(0.4, this.context.currentTime + 0.03);
-      envelope.gain.exponentialRampToValueAtTime(0.001, this.context.currentTime + 0.38);
+      envelope.gain.exponentialRampToValueAtTime(
+        0.4,
+        this.context.currentTime + 0.03,
+      );
+      envelope.gain.exponentialRampToValueAtTime(
+        0.001,
+        this.context.currentTime + 0.38,
+      );
       oscillator.connect(envelope).connect(this.gain);
       oscillator.start();
       oscillator.stop(this.context.currentTime + 0.4);
@@ -70,20 +79,58 @@ export class MusicManager {
     this.timer = setInterval(playNote, 440);
   }
 
-  async playTrack(locationId: GameLocationId): Promise<void> { await this.fadeToTrack(locationId); }
-  private stopTimer(): void { if (this.timer) clearInterval(this.timer); this.timer = null; }
-  stopAll(): void { this.stopTimer(); this.gain?.disconnect(); this.gain = null; this.currentLocationId = null; }
-  pause(): void { this.paused = true; }
-  resume(): void { this.paused = false; if (this.context?.state === "suspended") void this.context.resume(); }
-  isPaused(): boolean { return this.paused; }
-  toggleMute(): boolean { this.muted = !this.muted; localStorage.setItem("career_city_muted", String(this.muted)); this.updateGain(); return this.muted; }
-  isMuted(): boolean { return this.muted; }
-  setVolume(value: number): void { this.volume = Math.max(0, Math.min(1, value)); localStorage.setItem("career_city_volume", String(this.volume)); this.updateGain(); }
-  private updateGain(): void { if (this.gain) this.gain.gain.value = this.muted ? 0 : this.volume * 0.18; }
-  getVolume(): number { return this.volume; }
-  getCurrentTrackName(): string { return this.currentLocationId ? TRACK_NAMES[this.currentLocationId] : "-"; }
-  getCurrentLocationId(): GameLocationId | null { return this.currentLocationId; }
-  isStarted(): boolean { return this.started; }
+  async playTrack(locationId: GameLocationId): Promise<void> {
+    await this.fadeToTrack(locationId);
+  }
+  private stopTimer(): void {
+    if (this.timer) clearInterval(this.timer);
+    this.timer = null;
+  }
+  stopAll(): void {
+    this.stopTimer();
+    this.gain?.disconnect();
+    this.gain = null;
+    this.currentLocationId = null;
+  }
+  pause(): void {
+    this.paused = true;
+  }
+  resume(): void {
+    this.paused = false;
+    if (this.context?.state === "suspended") void this.context.resume();
+  }
+  isPaused(): boolean {
+    return this.paused;
+  }
+  toggleMute(): boolean {
+    this.muted = !this.muted;
+    localStorage.setItem("career_city_muted", String(this.muted));
+    this.updateGain();
+    return this.muted;
+  }
+  isMuted(): boolean {
+    return this.muted;
+  }
+  setVolume(value: number): void {
+    this.volume = Math.max(0, Math.min(1, value));
+    localStorage.setItem("career_city_volume", String(this.volume));
+    this.updateGain();
+  }
+  private updateGain(): void {
+    if (this.gain) this.gain.gain.value = this.muted ? 0 : this.volume * 0.18;
+  }
+  getVolume(): number {
+    return this.volume;
+  }
+  getCurrentTrackName(): string {
+    return this.currentLocationId ? TRACK_NAMES[this.currentLocationId] : "-";
+  }
+  getCurrentLocationId(): GameLocationId | null {
+    return this.currentLocationId;
+  }
+  isStarted(): boolean {
+    return this.started;
+  }
 }
 
 export const musicManager = new MusicManager();

@@ -240,15 +240,49 @@ export const NPCS: (NPC & {
 
 const PURPOSEFUL_DIALOGUE: Record<string, NPC["dialogue"]> = {
   sam_sage: [
-    { speaker: "SAM", text: "Welcome to Career City. Your first chapter is a preparation journey: build a resume credential, choose a power-up, train for an interview, then report to Ed." },
-    { speaker: "SAM", text: "Start at Vera's Resume Tailor. Walk through her door, speak with her, and complete one tailoring session. Your Journey tracker updates as you progress." },
-    { speaker: "SAM", text: "On desktop, move with WASD or arrows and talk with E or Enter. On touchscreens, use the joystick and INTERACT button." },
+    {
+      speaker: "SAM",
+      text: "Welcome to Career City. Your first chapter is a preparation journey: build a resume credential, choose a power-up, train for an interview, then report to Ed.",
+    },
+    {
+      speaker: "SAM",
+      text: "Start at Vera's Resume Tailor. Walk through her door, speak with her, and complete one tailoring session. Your Journey tracker updates as you progress.",
+    },
+    {
+      speaker: "SAM",
+      text: "On desktop, move with WASD or arrows and talk with E or Enter. On touchscreens, use the joystick and INTERACT button.",
+    },
   ],
-  vera_hr: [{ speaker: "VERA", text: "My workshop turns your real experience into a targeted resume credential. Enter through the door and I will guide your first session." }],
-  felix_shop: [{ speaker: "FELIX", text: "This shop turns earned XP into career power-ups. Finish Vera's resume session, then come inside and choose the boost that fits your path." }],
-  chad_coach: [{ speaker: "CHAD", text: "Interview training is your final preparation step. Enter the studio for a question, clear feedback, and another attempt." }],
-  penny_writer: [{ speaker: "PENNY", text: "I connect your experience to a specific role in a clear cover letter. My workshop is optional in Chapter 1, but strengthens your Career Passport." }],
-  ed_recruiter: [{ speaker: "ED", text: "I am the recruiter at the end of Chapter 1. Build your credential, choose a power-up, and finish interview training. Then return and show me your Career Passport." }],
+  vera_hr: [
+    {
+      speaker: "VERA",
+      text: "My workshop turns your real experience into a targeted resume credential. Enter through the door and I will guide your first session.",
+    },
+  ],
+  felix_shop: [
+    {
+      speaker: "FELIX",
+      text: "This shop turns earned XP into career power-ups. Finish Vera's resume session, then come inside and choose the boost that fits your path.",
+    },
+  ],
+  chad_coach: [
+    {
+      speaker: "CHAD",
+      text: "Interview training is your final preparation step. Enter the studio for a question, clear feedback, and another attempt.",
+    },
+  ],
+  penny_writer: [
+    {
+      speaker: "PENNY",
+      text: "I connect your experience to a specific role in a clear cover letter. My workshop is optional in Chapter 1, but strengthens your Career Passport.",
+    },
+  ],
+  ed_recruiter: [
+    {
+      speaker: "ED",
+      text: "I am the recruiter at the end of Chapter 1. Build your credential, choose a power-up, and finish interview training. Then return and show me your Career Passport.",
+    },
+  ],
 };
 
 for (const npc of NPCS) {
