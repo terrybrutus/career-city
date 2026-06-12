@@ -8,7 +8,8 @@ import {
 import { useModalFocus } from "@/hooks/useModalFocus";
 import { useProfile } from "@/hooks/useProfile";
 import { useActor } from "@caffeineai/core-infrastructure";
-import { useCallback, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useCallback, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 
 const ACCENT = "#00ffff";
@@ -66,6 +67,11 @@ export default function CoverLetterOverlay({
 }: { onClose: () => void }) {
   const { actor } = useActor(createActor);
   const { data: profile } = useProfile();
+  const { data: savedResumes } = useQuery({
+    queryKey: ["backpack-resumes"],
+    enabled: Boolean(actor),
+    queryFn: () => actor?.listResumes(),
+  });
   const draft = useRef(
     loadDraft("career_city_cover_letter_draft", {
       name: "",
@@ -87,6 +93,12 @@ export default function CoverLetterOverlay({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [isCopied, setIsCopied] = useState(false);
+  useEffect(() => {
+    const latest = savedResumes?.at(-1);
+    if (latest && !background.trim()) {
+      setBackground(latest.summary);
+    }
+  }, [background, savedResumes]);
   useAutosaveDraft(
     "career_city_cover_letter_draft",
     { name, jobTitle, company, jobDesc, background },

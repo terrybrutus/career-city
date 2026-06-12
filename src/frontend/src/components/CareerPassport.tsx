@@ -78,13 +78,17 @@ export default function CareerPassport({ onClose }: { onClose: () => void }) {
             ))}
           </PassportSection>
 
-          <PassportSection title="Inventory">
+          <PassportSection title="Backpack">
             <p>
               {profile?.inventory.length
                 ? profile.inventory
                     .map((item) => item.replaceAll("_", " "))
                     .join(", ")
-                : "No preparation tools acquired."}
+                : "Your backpack is ready for preparation tools."}
+            </p>
+            <p>
+              Saved work travels with you: resumes, cover letters, and interview
+              notes are available to the next workshop.
             </p>
           </PassportSection>
 

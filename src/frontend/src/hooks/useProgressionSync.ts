@@ -3,29 +3,38 @@ import { QuestStatus } from "@/backend";
 import { GameBridge } from "@/game/GameBridge";
 import { useActor } from "@caffeineai/core-infrastructure";
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 export function useProgressionSync() {
   const { actor } = useActor(createActor);
   const queryClient = useQueryClient();
+  const pending = useRef(new Set<string>());
 
   useEffect(() => {
-    if (!actor) return;
+    const complete = async (missionId: string) => {
+      if (!actor) {
+        pending.current.add(missionId);
+        return;
+      }
+      await actor.upsertQuestProgress(missionId, QuestStatus.completed, 0n);
+      pending.current.delete(missionId);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["profile"] }),
+        queryClient.invalidateQueries({ queryKey: ["quests"] }),
+      ]);
+      GameBridge.emit("questUpdated", { questId: missionId });
+    };
+    if (actor) {
+      for (const missionId of pending.current) void complete(missionId);
+    }
     const unsubs = [
       GameBridge.on("missionCompleted", ({ missionId }) => {
-        void actor
-          .upsertQuestProgress(missionId, QuestStatus.completed, 0n)
-          .then(() =>
-            Promise.all([
-              queryClient.invalidateQueries({ queryKey: ["profile"] }),
-              queryClient.invalidateQueries({ queryKey: ["quests"] }),
-            ]),
-          );
+        void complete(missionId);
       }),
       GameBridge.on("locationChanged", (payload) => {
         const locationId =
           typeof payload === "string" ? payload : payload.locationId;
-        void actor.savePlayerPosition(locationId);
+        if (actor) void actor.savePlayerPosition(locationId);
       }),
     ];
     return () => {

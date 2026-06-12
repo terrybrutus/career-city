@@ -375,6 +375,10 @@ export default function ResumeTailorOverlay({
               }}
               data-ocid="resume_tailor.success_state"
             >
+              <p>
+                Vera saved this plan in your Backpack. Penny and the other
+                mentors can now use it in later workshops.
+              </p>
               <ReactMarkdown
                 components={{
                   h1: ({ children }) => (

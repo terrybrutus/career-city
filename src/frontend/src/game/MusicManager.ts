@@ -1,27 +1,33 @@
 import type { GameLocationId } from "@/types/game";
 
-const TRACK_NAMES: Record<GameLocationId, string> = {
-  town_square: "Career City Theme",
-  resume_tailor: "Vera's Workshop",
-  cover_letter_corner: "Penny's Writing Room",
-  interview_coach: "Chad's Training Studio",
-  item_shop: "Felix's Item Shop",
-};
-
-const MOTIFS: Record<GameLocationId, number[]> = {
-  town_square: [261.63, 329.63, 392, 329.63, 293.66, 349.23, 440, 349.23],
-  resume_tailor: [220, 261.63, 329.63, 392, 329.63, 261.63],
-  cover_letter_corner: [293.66, 369.99, 440, 493.88, 440, 369.99],
-  interview_coach: [196, 246.94, 293.66, 392, 293.66, 246.94],
-  item_shop: [329.63, 415.3, 493.88, 554.37, 493.88, 415.3],
+const TRACKS: Record<GameLocationId, { name: string; url: string }> = {
+  town_square: {
+    name: "Little Town",
+    url: "https://opengameart.org/sites/default/files/little_town.ogg",
+  },
+  resume_tailor: {
+    name: "Vera's Workshop",
+    url: "https://opengameart.org/sites/default/files/JRPG_town.ogg",
+  },
+  cover_letter_corner: {
+    name: "Penny's Writing Room",
+    url: "https://opengameart.org/sites/default/files/JRPG_princess.ogg",
+  },
+  interview_coach: {
+    name: "Chad's Training Studio",
+    url: "https://opengameart.org/sites/default/files/JRPG_royalCourt.ogg",
+  },
+  item_shop: {
+    name: "Felix's Item Shop",
+    url: "https://opengameart.org/sites/default/files/Welcome%20to%20the%20Item%20Shop.ogg",
+  },
 };
 
 export class MusicManager {
-  private context: AudioContext | null = null;
-  private gain: GainNode | null = null;
-  private timer: ReturnType<typeof setInterval> | null = null;
+  private audio: HTMLAudioElement | null = null;
   private currentLocationId: GameLocationId | null = null;
   private pendingLocation: GameLocationId | null = null;
+  private transitionId = 0;
   private muted = localStorage.getItem("career_city_muted") === "true";
   private volume =
     Number.parseFloat(localStorage.getItem("career_city_volume") ?? "0.35") ||
@@ -40,94 +46,88 @@ export class MusicManager {
   }
 
   async fadeToTrack(locationId: GameLocationId): Promise<void> {
+    this.pendingLocation = locationId;
+    if (!this.started || this.currentLocationId === locationId) return;
+
+    const transitionId = ++this.transitionId;
+    this.stopCurrent();
+    const audio = new Audio(TRACKS[locationId].url);
+    audio.loop = true;
+    audio.preload = "auto";
+    audio.muted = this.muted;
+    audio.volume = this.volume;
+    this.audio = audio;
     this.currentLocationId = locationId;
-    if (!this.started) {
-      this.pendingLocation = locationId;
-      return;
-    }
-    this.stopTimer();
-    this.context ??= new AudioContext();
-    await this.context.resume();
-    this.gain?.disconnect();
-    this.gain = this.context.createGain();
-    this.gain.gain.value = this.muted ? 0 : this.volume * 0.18;
-    this.gain.connect(this.context.destination);
     this.paused = false;
-    const notes = MOTIFS[locationId];
-    let index = 0;
-    const playNote = () => {
-      if (!this.context || !this.gain || this.paused) return;
-      const oscillator = this.context.createOscillator();
-      const envelope = this.context.createGain();
-      oscillator.type =
-        locationId === "interview_coach" ? "square" : "triangle";
-      oscillator.frequency.value = notes[index++ % notes.length] ?? 261.63;
-      envelope.gain.setValueAtTime(0.001, this.context.currentTime);
-      envelope.gain.exponentialRampToValueAtTime(
-        0.4,
-        this.context.currentTime + 0.03,
-      );
-      envelope.gain.exponentialRampToValueAtTime(
-        0.001,
-        this.context.currentTime + 0.38,
-      );
-      oscillator.connect(envelope).connect(this.gain);
-      oscillator.start();
-      oscillator.stop(this.context.currentTime + 0.4);
-    };
-    playNote();
-    this.timer = setInterval(playNote, 440);
+    try {
+      await audio.play();
+      if (transitionId !== this.transitionId) {
+        audio.pause();
+        audio.src = "";
+      }
+    } catch {
+      if (transitionId === this.transitionId) this.paused = true;
+    }
   }
 
-  async playTrack(locationId: GameLocationId): Promise<void> {
-    await this.fadeToTrack(locationId);
+  private stopCurrent(): void {
+    if (!this.audio) return;
+    this.audio.pause();
+    this.audio.removeAttribute("src");
+    this.audio.load();
+    this.audio = null;
   }
-  private stopTimer(): void {
-    if (this.timer) clearInterval(this.timer);
-    this.timer = null;
-  }
+
   stopAll(): void {
-    this.stopTimer();
-    this.gain?.disconnect();
-    this.gain = null;
+    this.transitionId += 1;
+    this.stopCurrent();
     this.currentLocationId = null;
+    this.pendingLocation = null;
   }
+
   pause(): void {
+    this.audio?.pause();
     this.paused = true;
   }
+
   resume(): void {
+    if (this.audio) void this.audio.play();
     this.paused = false;
-    if (this.context?.state === "suspended") void this.context.resume();
   }
+
   isPaused(): boolean {
     return this.paused;
   }
+
   toggleMute(): boolean {
     this.muted = !this.muted;
     localStorage.setItem("career_city_muted", String(this.muted));
-    this.updateGain();
+    if (this.audio) this.audio.muted = this.muted;
     return this.muted;
   }
+
   isMuted(): boolean {
     return this.muted;
   }
+
   setVolume(value: number): void {
     this.volume = Math.max(0, Math.min(1, value));
     localStorage.setItem("career_city_volume", String(this.volume));
-    this.updateGain();
+    if (this.audio) this.audio.volume = this.volume;
   }
-  private updateGain(): void {
-    if (this.gain) this.gain.gain.value = this.muted ? 0 : this.volume * 0.18;
-  }
+
   getVolume(): number {
     return this.volume;
   }
+
   getCurrentTrackName(): string {
-    return this.currentLocationId ? TRACK_NAMES[this.currentLocationId] : "-";
+    return this.currentLocationId ? TRACKS[this.currentLocationId].name : "-";
   }
+
   getCurrentLocationId(): GameLocationId | null {
     return this.currentLocationId;
   }
+
   isStarted(): boolean {
     return this.started;
   }

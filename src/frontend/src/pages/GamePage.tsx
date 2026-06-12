@@ -889,6 +889,30 @@ export default function GamePage() {
     GameBridge.emit("dialogueClosed");
   }, []);
 
+  useEffect(() => {
+    if (!activeNPC) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (
+        event.code !== "Space" ||
+        event.target instanceof HTMLInputElement ||
+        event.target instanceof HTMLTextAreaElement ||
+        event.target instanceof HTMLSelectElement
+      ) {
+        return;
+      }
+      event.preventDefault();
+      const entry = activeNPC.dialogue[dialogueIndex];
+      const firstOption = entry?.options?.[0];
+      if (firstOption) {
+        handleOption(firstOption.action, firstOption.payload);
+      } else {
+        handleAdvance();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [activeNPC, dialogueIndex, handleAdvance, handleOption]);
+
   // Reset dialogueIndex whenever a new NPC opens (belt-and-suspenders guard
   // against stale index surviving from a previous multi-line dialogue)
   useEffect(() => {

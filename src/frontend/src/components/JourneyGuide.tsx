@@ -22,6 +22,10 @@ export default function JourneyGuide({
       CHAPTER_ONE.length) *
       100,
   );
+  const completedCount = CHAPTER_ONE.filter((mission) =>
+    completed.has(mission.id),
+  ).length;
+  const currentStep = Math.min(completedCount + 1, CHAPTER_ONE.length);
 
   if (mode === "panel") {
     return (
@@ -70,8 +74,7 @@ export default function JourneyGuide({
       <div className="journey-heading">
         <strong>CHAPTER 1</strong>
         <span>
-          {CHAPTER_ONE.filter((mission) => completed.has(mission.id)).length} /{" "}
-          {CHAPTER_ONE.length}
+          STEP {currentStep} OF {CHAPTER_ONE.length}
         </span>
       </div>
       <div className="journey-tracker-detail">

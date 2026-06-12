@@ -54,6 +54,10 @@ export const NPCS: CareerNPC[] = [
           { label: "NOT YET", action: "close" },
         ],
       },
+      {
+        speaker: "VERA",
+        text: "When we finish, I will place the saved resume in your Backpack so Penny, Chad, and Ed can build on it.",
+      },
     ],
   },
   {
