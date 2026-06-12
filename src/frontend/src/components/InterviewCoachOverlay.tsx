@@ -3,7 +3,8 @@ import { GameBridge } from "@/game/GameBridge";
 import { useModalFocus } from "@/hooks/useModalFocus";
 import { useProfile } from "@/hooks/useProfile";
 import { useActor } from "@caffeineai/core-infrastructure";
-import { useCallback, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useCallback, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 
 const ACCENT = "#ffaa00";
@@ -84,6 +85,18 @@ export default function InterviewCoachOverlay({
   const [error, setError] = useState("");
   const [isCopied, setIsCopied] = useState(false);
   const [showHint, setShowHint] = useState(false);
+  const { data: savedResumes } = useQuery({
+    queryKey: ["resumes"],
+    enabled: Boolean(actor),
+    queryFn: () => actor?.listResumes(),
+  });
+
+  useEffect(() => {
+    const latestTitle = savedResumes?.at(-1)?.name;
+    if (!latestTitle || state.jobTitle) return;
+    const carriedRole = latestTitle.split(" - ").at(-1)?.trim() ?? latestTitle;
+    setState((current) => ({ ...current, jobTitle: carriedRole }));
+  }, [savedResumes, state.jobTitle]);
 
   const startInterview = useCallback(async () => {
     if (!actor) {

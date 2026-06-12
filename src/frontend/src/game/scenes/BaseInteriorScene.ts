@@ -1,5 +1,6 @@
 import { NPCS } from "@/data/npcs";
 import { GameBridge } from "@/game/GameBridge";
+import { hasBackpack } from "@/game/playerState";
 import { BaseScene } from "@/game/scenes/BaseScene";
 import { isTypingInField } from "@/game/utils/inputFocusGuard";
 import type { GameLocationId } from "@/types/game";
@@ -297,6 +298,7 @@ export abstract class BaseInteriorScene extends BaseScene {
     g.fillRect(DOOR_X, DOOR_Y, DOOR_W, DOOR_H);
     // Door outline — accent color from location
     const accentColors: Record<GameLocationId, number> = {
+      home: 0x39ff14,
       town_square: 0x39ff14,
       resume_tailor: 0xff00ff,
       cover_letter_corner: 0x00ffff,
@@ -898,6 +900,12 @@ export abstract class BaseInteriorScene extends BaseScene {
     const sx = flip ? -1 : 1;
     g.fillStyle(0x000000, 0.3);
     g.fillEllipse(0, 12, 18, 6);
+    if (hasBackpack()) {
+      g.fillStyle(0x8c5b2e, 1);
+      g.fillRoundedRect(-9, -8, 18, 18, 3);
+      g.lineStyle(2, 0xffbf00, 1);
+      g.strokeRoundedRect(-9, -8, 18, 18, 3);
+    }
     g.fillStyle(0x226622, 1);
     g.fillRect(-6 * sx, -6, 12, 10);
     g.fillStyle(0xf5c5a0, 1);

@@ -12,7 +12,8 @@ mixin (
   profiles : Map.Map<CommonTypes.UserId, ProfileTypes.UserProfile>
 ) {
   func rewardFor(questId : Text) : Nat {
-    if (questId == "meet_sam") { 25 }
+    if (questId == "pack_for_the_journey") { 25 }
+    else if (questId == "meet_sam") { 25 }
     else if (questId == "visit_resume_tailor") { 25 }
     else if (questId == "craft_resume") { 100 }
     else if (questId == "visit_item_shop") { 25 }

@@ -1,5 +1,6 @@
 import { NPCS } from "@/data/npcs";
 import { GameBridge } from "@/game/GameBridge";
+import { hasBackpack } from "@/game/playerState";
 import { BaseScene } from "@/game/scenes/BaseScene";
 import { isTypingInField } from "@/game/utils/inputFocusGuard";
 import type { NPC } from "@/types/game";
@@ -41,6 +42,17 @@ const BENCH_X = 316;
 const BENCH_Y = 314;
 
 const BUILDINGS: BuildingDef[] = [
+  {
+    id: "home",
+    label: "YOUR\nHOME",
+    x: 330,
+    y: 460,
+    w: 140,
+    h: 100,
+    accentColor: 0x39ff14,
+    accentHex: "#39ff14",
+    route: "/",
+  },
   {
     id: "resume_tailor",
     label: "RESUME\nTAILOR",
@@ -480,13 +492,34 @@ export class TownScene extends BaseScene {
     g.fillRect(x, y, w, h);
 
     // Walls
-    g.fillStyle(0x2a2a3a, 1);
+    g.fillStyle(b.id === "home" ? 0x5b425f : 0x2a2a3a, 1);
     g.fillRect(x + 2, y + 2, w - 4, h - 4);
 
     // Roof area
     const roofH = Math.floor(h * 0.35);
     g.fillStyle(accentColor, 0.85);
     g.fillRect(x + 2, y + 2, w - 4, roofH);
+    if (b.id === "home") {
+      g.fillStyle(0x4a2738, 1);
+      g.fillTriangle(x - 8, y + roofH, x + w / 2, y - 24, x + w + 8, y + roofH);
+      g.lineStyle(3, 0x39ff14, 0.8);
+      g.strokeTriangle(
+        x - 8,
+        y + roofH,
+        x + w / 2,
+        y - 24,
+        x + w + 8,
+        y + roofH,
+      );
+      g.fillStyle(0x6b3b38, 1);
+      g.fillRect(x + w - 30, y - 20, 14, 35);
+      g.fillStyle(0xffbf00, 0.8);
+      g.fillRect(x + 18, y + roofH + 8, 18, 14);
+      g.fillRect(x + w - 36, y + roofH + 8, 18, 14);
+      g.fillStyle(0x245b2b, 1);
+      g.fillCircle(x - 8, y + h - 4, 13);
+      g.fillCircle(x + w + 8, y + h - 4, 13);
+    }
 
     g.fillStyle(0xffffff, 0.12);
     g.fillRect(x + 4, y + 4, w - 8, 4);
@@ -540,7 +573,7 @@ export class TownScene extends BaseScene {
 
     // Building label ABOVE building with a gap
     this.add
-      .text(x + w / 2, y - 8, b.label, {
+      .text(x + w / 2, b.id === "home" ? y - 30 : y - 8, b.label, {
         fontSize: "17px",
         color: b.accentHex,
         fontFamily: '"Space Grotesk", monospace',
@@ -1082,6 +1115,13 @@ export class TownScene extends BaseScene {
     g.fillStyle(0x000000, 0.3);
     g.fillEllipse(0, 12, 18, 6);
 
+    if (hasBackpack()) {
+      g.fillStyle(0x8c5b2e, 1);
+      g.fillRoundedRect(-9, -8, 18, 18, 3);
+      g.lineStyle(2, 0xffbf00, 1);
+      g.strokeRoundedRect(-9, -8, 18, 18, 3);
+    }
+
     // Body — green outfit
     g.fillStyle(0x226622, 1);
     g.fillRect(-6 * sx, -6, 12, 10);
@@ -1527,6 +1567,7 @@ export class TownScene extends BaseScene {
       if (!inDoor) continue;
 
       const sceneKeyMap: Record<string, string> = {
+        home: "HomeScene",
         resume_tailor: "ResumeTailorScene",
         cover_letter_corner: "CoverLetterScene",
         interview_coach: "InterviewCoachScene",

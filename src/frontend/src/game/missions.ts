@@ -1,4 +1,5 @@
 export type MissionId =
+  | "pack_for_the_journey"
   | "meet_sam"
   | "visit_resume_tailor"
   | "craft_resume"
@@ -23,6 +24,13 @@ export interface MissionDefinition {
 }
 
 export const MISSIONS: readonly MissionDefinition[] = [
+  {
+    id: "pack_for_the_journey",
+    title: "Pack for the Journey",
+    objective: "Find your Backpack at home and take it with you.",
+    reward: 25,
+    chapter: 1,
+  },
   {
     id: "meet_sam",
     title: "Meet Your Guide",

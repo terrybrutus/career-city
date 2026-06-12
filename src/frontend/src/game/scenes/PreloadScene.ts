@@ -35,7 +35,7 @@ export class PreloadScene extends Phaser.Scene {
   create(): void {
     this.createPlayerAnimations();
     GameBridge.emit("assetsLoaded");
-    this.scene.start("TownScene");
+    this.scene.start("HomeScene");
   }
 
   private createLoadingUI(cx: number, cy: number): void {

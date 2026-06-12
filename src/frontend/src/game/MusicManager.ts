@@ -1,6 +1,10 @@
 import type { GameLocationId } from "@/types/game";
 
 const TRACKS: Record<GameLocationId, { name: string; url: string }> = {
+  home: {
+    name: "Morning at Home",
+    url: "https://opengameart.org/sites/default/files/JRPG_town.ogg",
+  },
   town_square: {
     name: "Little Town",
     url: "https://opengameart.org/sites/default/files/little_town.ogg",

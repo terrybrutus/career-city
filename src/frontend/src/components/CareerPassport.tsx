@@ -1,6 +1,7 @@
 import { createActor } from "@/backend";
 import { GameBridge } from "@/game/GameBridge";
 import { CREDENTIALS, useCareerProgress } from "@/game/careerProgress";
+import { hasBackpack } from "@/game/playerState";
 import { useModalFocus } from "@/hooks/useModalFocus";
 import { useProfile } from "@/hooks/useProfile";
 import { useQuests } from "@/hooks/useQuests";
@@ -80,11 +81,13 @@ export default function CareerPassport({ onClose }: { onClose: () => void }) {
 
           <PassportSection title="Backpack">
             <p>
-              {profile?.inventory.length
-                ? profile.inventory
-                    .map((item) => item.replaceAll("_", " "))
-                    .join(", ")
-                : "Your backpack is ready for preparation tools."}
+              {!hasBackpack()
+                ? "Find your Backpack at home before beginning the journey."
+                : profile?.inventory.length
+                  ? profile.inventory
+                      .map((item) => item.replaceAll("_", " "))
+                      .join(", ")
+                  : "Your Backpack is equipped and ready for preparation tools."}
             </p>
             <p>
               Saved work travels with you: resumes, cover letters, and interview

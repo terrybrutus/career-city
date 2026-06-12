@@ -5,6 +5,7 @@ export interface PlayerPosition {
 }
 
 export type GameLocationId =
+  | "home"
   | "town_square"
   | "resume_tailor"
   | "cover_letter_corner"

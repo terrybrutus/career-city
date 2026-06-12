@@ -2,6 +2,18 @@ import type { GameLocation } from "@/types/game";
 
 export const LOCATIONS: GameLocation[] = [
   {
+    id: "home",
+    name: "YOUR HOME",
+    description: "Where every Career City journey begins",
+    color: "#FFBF00",
+    buildingColor: "#39FF14",
+    musicTrack: "home",
+    mapPosition: { x: 50, y: 90 },
+    route: "/",
+    x: 50,
+    y: 90,
+  },
+  {
     id: "town_square",
     name: "TOWN SQUARE",
     description: "Where dreams come to file their taxes",

@@ -75,7 +75,7 @@ export const NPCS: CareerNPC[] = [
     dialogue: [
       {
         speaker: "FELIX",
-        text: "A useful loadout supports the next challenge. Your Career Tokens never reduce your lifetime XP.",
+        text: "I can see Vera's resume in your Backpack. Choose a preparation tool that supports the story you want Chad and Ed to remember.",
         options: [
           { label: "BUILD LOADOUT", action: "open_tool", payload: "item-shop" },
           { label: "NOT YET", action: "close" },
@@ -98,7 +98,7 @@ export const NPCS: CareerNPC[] = [
     dialogue: [
       {
         speaker: "CHAD",
-        text: "We will practice one answer, review it without penalties, and save the coaching note.",
+        text: "Your Backpack gives us the evidence Vera helped you shape. We will turn one achievement into a practiced STAR story and save the coaching note.",
         options: [
           {
             label: "START PRACTICE",
@@ -125,7 +125,7 @@ export const NPCS: CareerNPC[] = [
     dialogue: [
       {
         speaker: "PENNY",
-        text: "This optional workshop creates a saved, role-specific cover letter.",
+        text: "I can build from the latest resume in your Backpack, then return a saved, role-specific cover letter for Ed.",
         options: [
           {
             label: "OPEN WRITING DESK",

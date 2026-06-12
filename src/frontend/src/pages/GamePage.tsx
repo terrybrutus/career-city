@@ -14,6 +14,7 @@ import {
 } from "@/game/careerProgress";
 import { loadGameSettings, saveGameSettings } from "@/game/gameSettings";
 import { CoverLetterScene } from "@/game/scenes/CoverLetterScene";
+import { HomeScene } from "@/game/scenes/HomeScene";
 import { InterviewCoachScene } from "@/game/scenes/InterviewCoachScene";
 import { ItemShopScene } from "@/game/scenes/ItemShopScene";
 import { PreloadScene } from "@/game/scenes/PreloadScene";
@@ -725,6 +726,7 @@ export default function GamePage() {
       },
       scene: [
         PreloadScene,
+        HomeScene,
         TownScene,
         ResumeTailorScene,
         CoverLetterScene,
