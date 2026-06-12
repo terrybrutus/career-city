@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { loadGameSettings } from "@/game/gameSettings";
 
 /**
  * BaseScene — abstract base class for all game scenes.
@@ -7,13 +8,27 @@ import Phaser from "phaser";
 export abstract class BaseScene extends Phaser.Scene {
   protected scanlineOverlay: Phaser.GameObjects.Graphics | null = null;
   protected playerSpeed = 128; // pixels per second
+  private responsiveWorld = { width: 800, height: 600 };
 
   setupCamera(worldWidth: number, worldHeight: number): void {
+    this.responsiveWorld = { width: worldWidth, height: worldHeight };
     this.cameras.main.setBounds(0, 0, worldWidth, worldHeight);
-    this.cameras.main.setBackgroundColor(0x000000);
+    this.cameras.main.setBackgroundColor(0x132313);
+    this.applyResponsiveCamera();
+    this.scale.on("resize", this.applyResponsiveCamera, this);
+    this.events.once("shutdown", () => this.scale.off("resize", this.applyResponsiveCamera, this));
+  }
+
+  private applyResponsiveCamera(): void {
+    const { width, height } = this.scale;
+    const zoom = width >= height
+      ? Math.max(0.9, Math.min(1.25, height / this.responsiveWorld.height))
+      : Math.max(0.72, Math.min(1, width / this.responsiveWorld.width));
+    this.cameras.main.setZoom(zoom);
   }
 
   addScanlineOverlay(): void {
+    if (!loadGameSettings().scanlines) return;
     const { width, height } = this.scale;
     this.scanlineOverlay = this.add.graphics();
     this.scanlineOverlay.setDepth(9000);
@@ -41,7 +56,11 @@ export abstract class BaseScene extends Phaser.Scene {
   }
 
   getPlayerSpeed(): number {
-    return this.playerSpeed;
+    return this.playerSpeed * loadGameSettings().movementSpeed;
+  }
+
+  getJoystickSensitivity(): number {
+    return loadGameSettings().joystickSensitivity;
   }
 
   /** Normalize a movement vector (so diagonal isn't faster) */

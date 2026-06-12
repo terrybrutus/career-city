@@ -129,10 +129,14 @@ export abstract class BaseInteriorScene extends BaseScene {
     };
     GameBridge.on("careerToolOpen", onToolOpen);
     GameBridge.on("careerToolClose", onToolClose);
+    GameBridge.on("dialogueOpened", onToolOpen);
+    GameBridge.on("dialogueClosed", onToolClose);
     // Remove listeners when this scene shuts down
     this.events.once("shutdown", () => {
       GameBridge.off("careerToolOpen", onToolOpen);
       GameBridge.off("careerToolClose", onToolClose);
+      GameBridge.off("dialogueOpened", onToolOpen);
+      GameBridge.off("dialogueClosed", onToolClose);
     });
 
     if (data) {
@@ -163,7 +167,6 @@ export abstract class BaseInteriorScene extends BaseScene {
 
     // Camera follows player; slight zoom for interior feel
     this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
-    this.cameras.main.setZoom(1.4);
 
     // Fade in from black (screen transition effect)
     this.cameras.main.fadeIn(320, 0, 0, 0);
@@ -373,6 +376,15 @@ export abstract class BaseInteriorScene extends BaseScene {
 
     if (!this.isTouchDevice) return;
 
+    const interact = this.add.text(this.scale.width - 76, this.scale.height - 82, "INTERACT", {
+      fontSize: "13px", color: "#ffffff", backgroundColor: "#173117",
+      padding: { x: 14, y: 12 }, fontFamily: '"Space Grotesk", monospace',
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(8100).setInteractive();
+    interact.on("pointerdown", () => this.handleNpcInteract());
+    const positionInteract = () => interact.setPosition(this.scale.width - 76, this.scale.height - 82);
+    this.scale.on("resize", positionInteract);
+    this.events.once("shutdown", () => this.scale.off("resize", positionInteract));
+
     this.input.on("pointerdown", (p: Phaser.Input.Pointer) => {
       if (p.x > this.scale.width / 2) return;
       this.joystickActive = true;
@@ -389,10 +401,8 @@ export abstract class BaseInteriorScene extends BaseScene {
       const dist = Math.sqrt(dx * dx + dy * dy);
       const maxDist = 60;
       if (dist > 0) {
-        this.joystickVec = {
-          x: dx / Math.max(dist, maxDist),
-          y: dy / Math.max(dist, maxDist),
-        };
+        const magnitude = Math.min(1, (dist / maxDist) * this.getJoystickSensitivity());
+        this.joystickVec = { x: (dx / dist) * magnitude, y: (dy / dist) * magnitude };
       }
     });
 
@@ -430,7 +440,7 @@ export abstract class BaseInteriorScene extends BaseScene {
     // ── TYPING GUARD: freeze movement while user is in a form field ──────────
     if (isTypingInField()) return;
 
-    const speed = this.playerSpeed * (delta / 1000);
+    const speed = this.getPlayerSpeed() * (delta / 1000);
     let dx = 0;
     let dy = 0;
 
@@ -600,10 +610,7 @@ export abstract class BaseInteriorScene extends BaseScene {
     );
     // Show tip bubble within 100px
     const inTipRange = d < 100;
-    if (inTipRange && !this.tipVisible) {
-      this.tipVisible = true;
-      this.showTipBubble();
-    } else if (!inTipRange && this.tipVisible) {
+    if (!inTipRange && this.tipVisible) {
       this.tipVisible = false;
       if (this.tipBubble) {
         this.tipBubble.destroy();
@@ -689,12 +696,13 @@ export abstract class BaseInteriorScene extends BaseScene {
   private showConfirmPrompt(): void {
     if (!this.npcEntry) return;
     const toolLabels: Record<string, string> = {
-      "resume-tailor": "[Space] Tailor Resume",
-      "cover-letter": "[Space] Write Cover Letter",
-      "interview-coach": "[Space] Start Mock Interview",
-      "item-shop": "[Space] Browse Shop",
+      "resume-tailor": "Talk to Vera",
+      "cover-letter": "Talk to Penny",
+      "interview-coach": "Talk to Chad",
+      "item-shop": "Talk to Felix",
     };
-    const label = toolLabels[this.getToolId()] ?? "[Space] Interact";
+    const action = this.isTouchDevice ? "Tap INTERACT" : "Press E or Enter";
+    const label = `${action} - ${toolLabels[this.getToolId()] ?? "Interact"}`;
 
     const { x, y } = this.npcEntry;
     const container = this.add.container(x, y + 36);
@@ -735,17 +743,31 @@ export abstract class BaseInteriorScene extends BaseScene {
     // Only open career tool when within confirm range AND prompt is showing
     if (this.confirmPromptVisible && !this.careerToolOpen && !this.hasExited) {
       this.npcWasInInteractRange = true;
-      this.careerToolOpen = true;
-      // Hide confirm prompt
       if (this.confirmPromptContainer) {
         this.confirmPromptContainer.destroy();
         this.confirmPromptContainer = null;
       }
       this.confirmPromptVisible = false;
-      GameBridge.emit("careerToolOpen", {
-        tool: this.getToolId(),
-        npcId: this.npcEntry?.npcId ?? "",
-      });
+      const npcData = NPCS.find((npc) => npc.id === this.npcEntry?.npcId);
+      if (npcData) {
+        const introductions: Record<string, string> = {
+          "resume-tailor": "I turn your real experience into a credential recruiters can understand. Ready to tailor your first resume?",
+          "cover-letter": "A strong cover letter connects your story to one specific opportunity. Ready to write yours?",
+          "interview-coach": "We train with real questions, clear feedback, and another attempt. Ready to practice?",
+          "item-shop": "Your XP buys useful career power-ups. I will explain exactly what each one changes.",
+        };
+        GameBridge.emit("dialogueOpened", {
+          ...npcData,
+          dialogue: [{
+            speaker: npcData.name,
+            text: introductions[this.getToolId()] ?? "Ready to begin?",
+            options: [
+              { label: "[START]", action: "open_tool", payload: this.getToolId() },
+              { label: "[NOT YET]", action: "close" },
+            ],
+          }],
+        });
+      }
       return;
     }
     // Fallback: show NPC dialogue line if in tip range

@@ -1,227 +1,89 @@
 import type { GameLocationId } from "@/types/game";
 
-/**
- * MusicManager — HTML5 Audio-based music player.
- * Uses external OGG URLs for all tracks. Fades between tracks smoothly.
- * Respects browser autoplay policy: starts on first user interaction.
- */
-
-const TRACK_URLS: Record<GameLocationId, string> = {
-  town_square: "https://opengameart.org/sites/default/files/little%20town.ogg",
-  resume_tailor: "https://opengameart.org/sites/default/files/JRPG_town.ogg",
-  cover_letter_corner:
-    "https://opengameart.org/sites/default/files/JRPG_princess.ogg",
-  interview_coach:
-    "https://opengameart.org/sites/default/files/JRPG_royalCourt.ogg",
-  item_shop: "https://opengameart.org/sites/default/files/JRPG_town.ogg",
+const TRACK_NAMES: Record<GameLocationId, string> = {
+  town_square: "Career City Theme",
+  resume_tailor: "Vera's Workshop",
+  cover_letter_corner: "Penny's Writing Room",
+  interview_coach: "Chad's Training Studio",
+  item_shop: "Felix's Item Shop",
 };
 
-const TRACK_NAMES: Record<GameLocationId, string> = {
-  town_square: "Little Town",
-  resume_tailor: "Resume Tailor",
-  cover_letter_corner: "Cover Letter Corner",
-  interview_coach: "Interview Coach",
-  item_shop: "Item Shop",
+const MOTIFS: Record<GameLocationId, number[]> = {
+  town_square: [261.63, 329.63, 392, 329.63, 293.66, 349.23, 440, 349.23],
+  resume_tailor: [220, 261.63, 329.63, 392, 329.63, 261.63],
+  cover_letter_corner: [293.66, 369.99, 440, 493.88, 440, 369.99],
+  interview_coach: [196, 246.94, 293.66, 392, 293.66, 246.94],
+  item_shop: [329.63, 415.3, 493.88, 554.37, 493.88, 415.3],
 };
 
 export class MusicManager {
-  private currentAudio: HTMLAudioElement | null = null;
+  private context: AudioContext | null = null;
+  private gain: GainNode | null = null;
+  private timer: ReturnType<typeof setInterval> | null = null;
   private currentLocationId: GameLocationId | null = null;
-  private muted: boolean;
-  private volume: number;
-  private started = false;
   private pendingLocation: GameLocationId | null = null;
-  private fadeInterval: ReturnType<typeof setInterval> | null = null;
-  private isFading = false;
+  private muted = localStorage.getItem("career_city_muted") === "true";
+  private volume = Number.parseFloat(localStorage.getItem("career_city_volume") ?? "0.35") || 0.35;
+  private started = false;
+  private paused = false;
 
   constructor() {
-    this.muted = localStorage.getItem("career_city_muted") === "true";
-    this.volume = Number.parseFloat(
-      localStorage.getItem("career_city_volume") ?? "0.35",
-    );
-    if (Number.isNaN(this.volume)) this.volume = 0.35;
-
-    const startOnInteraction = () => {
-      if (!this.started) {
-        this.started = true;
-        if (this.pendingLocation) {
-          void this.fadeToTrack(this.pendingLocation);
-          this.pendingLocation = null;
-        }
-      }
-      window.removeEventListener("click", startOnInteraction);
-      window.removeEventListener("keydown", startOnInteraction);
-      window.removeEventListener("touchstart", startOnInteraction);
-      window.removeEventListener("pointerdown", startOnInteraction);
+    const start = () => {
+      if (this.started) return;
+      this.started = true;
+      if (this.pendingLocation) void this.fadeToTrack(this.pendingLocation);
     };
-    window.addEventListener("click", startOnInteraction);
-    window.addEventListener("keydown", startOnInteraction);
-    window.addEventListener("touchstart", startOnInteraction);
-    window.addEventListener("pointerdown", startOnInteraction);
-  }
-
-  private clearFade(): void {
-    if (this.fadeInterval !== null) {
-      clearInterval(this.fadeInterval);
-      this.fadeInterval = null;
-    }
-    this.isFading = false;
-  }
-
-  private fadeOutCurrent(): Promise<void> {
-    return new Promise((resolve) => {
-      if (!this.currentAudio) {
-        resolve();
-        return;
-      }
-      this.clearFade();
-      this.isFading = true;
-      const audio = this.currentAudio;
-      const step = 0.05;
-      const intervalMs = 40; // ~25 steps * 40ms = ~1s fade
-      this.fadeInterval = setInterval(() => {
-        if (audio.volume > step) {
-          audio.volume = Math.max(0, audio.volume - step);
-        } else {
-          audio.volume = 0;
-          audio.pause();
-          this.clearFade();
-          resolve();
-        }
-      }, intervalMs);
-    });
-  }
-
-  private fadeInAudio(audio: HTMLAudioElement): void {
-    this.clearFade();
-    audio.volume = 0;
-    const target = this.muted ? 0 : this.volume;
-    const step = 0.04;
-    const intervalMs = 40; // ~25 steps * 40ms = ~1s fade
-    this.fadeInterval = setInterval(() => {
-      if (audio.volume < target - step) {
-        audio.volume = Math.min(target, audio.volume + step);
-      } else {
-        audio.volume = target;
-        this.clearFade();
-      }
-    }, intervalMs);
+    window.addEventListener("pointerdown", start, { once: true });
+    window.addEventListener("keydown", start, { once: true });
   }
 
   async fadeToTrack(locationId: GameLocationId): Promise<void> {
+    this.currentLocationId = locationId;
     if (!this.started) {
       this.pendingLocation = locationId;
       return;
     }
-    if (
-      this.currentLocationId === locationId &&
-      this.currentAudio &&
-      !this.currentAudio.paused
-    ) {
-      return;
-    }
-
-    // Fade out current track
-    if (this.currentAudio && !this.currentAudio.paused) {
-      await this.fadeOutCurrent();
-    }
-
-    // Stop and remove old audio
-    if (this.currentAudio) {
-      this.currentAudio.pause();
-      this.currentAudio.src = "";
-      this.currentAudio = null;
-    }
-
-    this.currentLocationId = locationId;
-    const url = TRACK_URLS[locationId];
-    if (!url) return;
-
-    const audio = new Audio(url);
-    audio.loop = true;
-    audio.volume = 0;
-    audio.preload = "auto";
-    this.currentAudio = audio;
-
-    // Play and fade in
-    try {
-      await audio.play();
-      this.fadeInAudio(audio);
-    } catch {
-      // Autoplay blocked — will start on next interaction
-    }
+    this.stopTimer();
+    this.context ??= new AudioContext();
+    await this.context.resume();
+    this.gain?.disconnect();
+    this.gain = this.context.createGain();
+    this.gain.gain.value = this.muted ? 0 : this.volume * 0.18;
+    this.gain.connect(this.context.destination);
+    this.paused = false;
+    const notes = MOTIFS[locationId];
+    let index = 0;
+    const playNote = () => {
+      if (!this.context || !this.gain || this.paused) return;
+      const oscillator = this.context.createOscillator();
+      const envelope = this.context.createGain();
+      oscillator.type = locationId === "interview_coach" ? "square" : "triangle";
+      oscillator.frequency.value = notes[index++ % notes.length] ?? 261.63;
+      envelope.gain.setValueAtTime(0.001, this.context.currentTime);
+      envelope.gain.exponentialRampToValueAtTime(0.4, this.context.currentTime + 0.03);
+      envelope.gain.exponentialRampToValueAtTime(0.001, this.context.currentTime + 0.38);
+      oscillator.connect(envelope).connect(this.gain);
+      oscillator.start();
+      oscillator.stop(this.context.currentTime + 0.4);
+    };
+    playNote();
+    this.timer = setInterval(playNote, 440);
   }
 
-  async playTrack(locationId: GameLocationId): Promise<void> {
-    if (this.currentLocationId === locationId) return;
-    await this.fadeToTrack(locationId);
-  }
-
-  stopAll(): void {
-    this.clearFade();
-    if (this.currentAudio) {
-      this.currentAudio.pause();
-      this.currentAudio.src = "";
-      this.currentAudio = null;
-    }
-    this.currentLocationId = null;
-  }
-
-  pause(): void {
-    if (!this.currentAudio) return;
-    this.clearFade();
-    this.currentAudio.pause();
-  }
-
-  resume(): void {
-    if (!this.currentAudio || this.muted) return;
-    void this.currentAudio.play();
-    this.currentAudio.volume = this.volume;
-  }
-
-  isPaused(): boolean {
-    if (!this.currentAudio) return true;
-    return this.currentAudio.paused;
-  }
-
-  toggleMute(): boolean {
-    this.muted = !this.muted;
-    localStorage.setItem("career_city_muted", String(this.muted));
-    if (this.currentAudio) {
-      this.currentAudio.volume = this.muted ? 0 : this.volume;
-    }
-    return this.muted;
-  }
-
-  isMuted(): boolean {
-    return this.muted;
-  }
-
-  setVolume(v: number): void {
-    this.volume = Math.max(0, Math.min(1, v));
-    localStorage.setItem("career_city_volume", String(this.volume));
-    if (this.currentAudio && !this.muted) {
-      this.currentAudio.volume = this.volume;
-    }
-  }
-
-  getVolume(): number {
-    return this.volume;
-  }
-
-  getCurrentTrackName(): string {
-    if (!this.currentLocationId) return "\u2014";
-    return TRACK_NAMES[this.currentLocationId] ?? "\u2014";
-  }
-
-  getCurrentLocationId(): GameLocationId | null {
-    return this.currentLocationId;
-  }
-
-  isStarted(): boolean {
-    return this.started;
-  }
+  async playTrack(locationId: GameLocationId): Promise<void> { await this.fadeToTrack(locationId); }
+  private stopTimer(): void { if (this.timer) clearInterval(this.timer); this.timer = null; }
+  stopAll(): void { this.stopTimer(); this.gain?.disconnect(); this.gain = null; this.currentLocationId = null; }
+  pause(): void { this.paused = true; }
+  resume(): void { this.paused = false; if (this.context?.state === "suspended") void this.context.resume(); }
+  isPaused(): boolean { return this.paused; }
+  toggleMute(): boolean { this.muted = !this.muted; localStorage.setItem("career_city_muted", String(this.muted)); this.updateGain(); return this.muted; }
+  isMuted(): boolean { return this.muted; }
+  setVolume(value: number): void { this.volume = Math.max(0, Math.min(1, value)); localStorage.setItem("career_city_volume", String(this.volume)); this.updateGain(); }
+  private updateGain(): void { if (this.gain) this.gain.gain.value = this.muted ? 0 : this.volume * 0.18; }
+  getVolume(): number { return this.volume; }
+  getCurrentTrackName(): string { return this.currentLocationId ? TRACK_NAMES[this.currentLocationId] : "-"; }
+  getCurrentLocationId(): GameLocationId | null { return this.currentLocationId; }
+  isStarted(): boolean { return this.started; }
 }
 
-// Singleton
 export const musicManager = new MusicManager();

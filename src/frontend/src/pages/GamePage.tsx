@@ -6,6 +6,7 @@ import JourneyGuide from "@/components/JourneyGuide";
 import RecruiterEncounter from "@/components/RecruiterEncounter";
 import ResumeTailorOverlay from "@/components/ResumeTailorOverlay";
 import { GameBridge } from "@/game/GameBridge";
+import { loadGameSettings, saveGameSettings } from "@/game/gameSettings";
 import { musicManager } from "@/game/MusicManager";
 import { CareerProgressTracker } from "@/game/careerProgress";
 import { CoverLetterScene } from "@/game/scenes/CoverLetterScene";
@@ -28,12 +29,12 @@ type HUDTab = "status" | "quests" | "music" | "howto" | null;
 
 function UnifiedHUDPanel({ onPassport }: { onPassport: () => void }) {
   const { data: profile } = useProfile();
-  const { quests } = useQuests();
   const [activeTab, setActiveTab] = useState<HUDTab>(null);
   const [trackName, setTrackName] = useState("—");
   const [paused, setPaused] = useState(false);
   const [volume, setVolume] = useState(() => musicManager.getVolume());
   const [started, setStarted] = useState(() => musicManager.isStarted());
+  const [settings, setSettings] = useState(loadGameSettings);
 
   useEffect(() => {
     const poll = () => {
@@ -148,8 +149,8 @@ function UnifiedHUDPanel({ onPassport }: { onPassport: () => void }) {
         </button>
         <button
           type="button"
-          title="Quests (Q)"
-          aria-label="Toggle quests"
+          title="Journey (Q)"
+          aria-label="Toggle journey"
           data-ocid="hud.quests_tab"
           style={iconBtnStyle(activeTab === "quests")}
           onClick={() => toggleTab("quests")}
@@ -210,18 +211,7 @@ function UnifiedHUDPanel({ onPassport }: { onPassport: () => void }) {
           )}
           {activeTab === "quests" && (
             <div style={{ color: dim, fontSize: 13 }}>
-              <PanelTitle>QUEST LOG</PanelTitle>
-              {quests.length === 0 ? (
-                <div>Talk to NPCs around town to unlock quests.</div>
-              ) : (
-                quests.map((quest) => (
-                  <div className="dock-quest" key={quest.questId}>
-                    <strong>{quest.title}</strong>
-                    <span>{quest.status}</span>
-                    <small>{quest.description}</small>
-                  </div>
-                ))
-              )}
+              <JourneyGuide mode="panel" />
             </div>
           )}
           {activeTab === "music" && (
@@ -356,6 +346,20 @@ function UnifiedHUDPanel({ onPassport }: { onPassport: () => void }) {
                 >
                   Use joystick on mobile to move
                 </div>
+              </div>
+              <div className="settings-grid">
+                <label htmlFor="movement-speed">Movement speed</label>
+                <input id="movement-speed" type="range" min={0.75} max={2} step={0.05} value={settings.movementSpeed} onChange={(event) => {
+                  const next = { ...settings, movementSpeed: Number(event.target.value) };
+                  setSettings(next);
+                  saveGameSettings(next);
+                }} />
+                <label htmlFor="joystick-sensitivity">Joystick sensitivity</label>
+                <input id="joystick-sensitivity" type="range" min={0.75} max={2} step={0.05} value={settings.joystickSensitivity} onChange={(event) => {
+                  const next = { ...settings, joystickSensitivity: Number(event.target.value) };
+                  setSettings(next);
+                  saveGameSettings(next);
+                }} />
               </div>
             </div>
           )}
@@ -532,7 +536,7 @@ function DialogueOverlay({
           aria-label="Close dialogue"
           data-ocid="dialogue.close_button"
         >
-          [ESC]
+          [CLOSE]
         </button>
       </div>
     </div>
@@ -604,10 +608,8 @@ export default function GamePage() {
         arcade: { gravity: { x: 0, y: 0 }, debug: false },
       },
       scale: {
-        mode: Phaser.Scale.FIT,
-        width: 800,
-        height: 600,
-        autoCenter: Phaser.Scale.CENTER_BOTH,
+        mode: Phaser.Scale.RESIZE,
+        autoCenter: Phaser.Scale.NO_CENTER,
       },
       render: {
         pixelArt: true,
@@ -748,6 +750,11 @@ export default function GamePage() {
       } else if (action === "accept_quest" && payload) {
         acceptQuest(payload);
         handleAdvance();
+      } else if (action === "open_tool" && payload) {
+        setActiveNPC(null);
+        setDialogueIndex(0);
+        GameBridge.emit("dialogueClosed");
+        GameBridge.emit("careerToolOpen", { tool: payload, npcId: activeNPC?.id ?? "" });
       } else {
         handleAdvance();
       }
@@ -811,7 +818,7 @@ export default function GamePage() {
           GameBridge.emit("careerToolOpen", { tool: "passport" });
         }}
       />
-      <JourneyGuide />
+      <JourneyGuide mode="tracker" />
       <CareerProgressTracker />
 
       {/* CRT scanline overlay (CSS) */}

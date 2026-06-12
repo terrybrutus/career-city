@@ -33,7 +33,7 @@ export interface DialogueEntry {
 
 export interface DialogueOption {
   label: string;
-  action: "accept_quest" | "decline" | "navigate" | "close";
+  action: "accept_quest" | "decline" | "navigate" | "close" | "open_tool";
   payload?: string;
 }
 

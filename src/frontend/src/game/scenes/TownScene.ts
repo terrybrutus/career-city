@@ -224,7 +224,6 @@ export class TownScene extends BaseScene {
 
     // Camera follows player
     this.cameras.main.startFollow(this.player, true, 0.08, 0.08);
-    this.cameras.main.setZoom(1.4);
 
     // Fade in from black when returning from an interior
     if (data?.returnX !== undefined) {
@@ -1154,6 +1153,15 @@ export class TownScene extends BaseScene {
 
     if (!this.isTouchDevice) return;
 
+    const interact = this.add.text(this.scale.width - 76, this.scale.height - 82, "INTERACT", {
+      fontSize: "13px", color: "#ffffff", backgroundColor: "#173117",
+      padding: { x: 14, y: 12 }, fontFamily: '"Space Grotesk", monospace',
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(8100).setInteractive();
+    interact.on("pointerdown", () => this.handleInteract());
+    const positionInteract = () => interact.setPosition(this.scale.width - 76, this.scale.height - 82);
+    this.scale.on("resize", positionInteract);
+    this.events.once("shutdown", () => this.scale.off("resize", positionInteract));
+
     this.input.on("pointerdown", (p: Phaser.Input.Pointer) => {
       if (p.x > this.scale.width / 2) return;
       this.joystickActive = true;
@@ -1170,10 +1178,8 @@ export class TownScene extends BaseScene {
       const dist = Math.sqrt(dx * dx + dy * dy);
       const maxDist = 60;
       if (dist > 0) {
-        this.joystickVec = {
-          x: dx / Math.max(dist, maxDist),
-          y: dy / Math.max(dist, maxDist),
-        };
+        const magnitude = Math.min(1, (dist / maxDist) * this.getJoystickSensitivity());
+        this.joystickVec = { x: (dx / dist) * magnitude, y: (dy / dist) * magnitude };
       }
     });
 
@@ -1215,7 +1221,7 @@ export class TownScene extends BaseScene {
     // ── TYPING GUARD: freeze movement while user is in a form field ──────────
     if (isTypingInField()) return;
 
-    const speed = this.playerSpeed * (delta / 1000);
+    const speed = this.getPlayerSpeed() * (delta / 1000);
     let dx = 0;
     let dy = 0;
 
@@ -1317,14 +1323,7 @@ export class TownScene extends BaseScene {
     }
 
     // Speech bubble above NPC head — appears automatically on proximity enter
-    if (nearNPC && nearNPC.npcId !== this.lastTipNpcId) {
-      this.lastTipNpcId = nearNPC.npcId;
-      if (this.tipBubble) {
-        this.tipBubble.destroy();
-        this.tipBubble = null;
-      }
-      this.showNPCTipBubble(nearNPC.npcId, nearNPC.x, nearNPC.y);
-    } else if (!nearNPC && this.lastTipNpcId !== null) {
+    if (!nearNPC && this.lastTipNpcId !== null) {
       this.lastTipNpcId = null;
       if (this.tipBubble) {
         this.tipBubble.destroy();
@@ -1413,7 +1412,7 @@ export class TownScene extends BaseScene {
       .text(
         this.scale.width / 2,
         this.scale.height - 39,
-        `Press E, Enter, or Space to talk to ${npc.name}`,
+        this.isTouchDevice ? `Tap INTERACT to talk to ${npc.name}` : `Press E or Enter to talk to ${npc.name}`,
         {
           fontSize: "14px",
           color: "#ffffff",
