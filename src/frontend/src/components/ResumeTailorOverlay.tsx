@@ -1,5 +1,6 @@
 import { createActor } from "@/backend";
 import { GameBridge } from "@/game/GameBridge";
+import { useProfile } from "@/hooks/useProfile";
 import { useActor } from "@caffeineai/core-infrastructure";
 import { useCallback, useState } from "react";
 import ReactMarkdown from "react-markdown";
@@ -65,6 +66,8 @@ export default function ResumeTailorOverlay({
   onClose,
 }: { onClose: () => void }) {
   const { actor } = useActor(createActor);
+  const { data: profile } = useProfile();
+  const hasResumeBoost = profile?.inventory.includes("resume_boost") ?? false;
   const [name, setName] = useState("");
   const [jobTitle, setJobTitle] = useState("");
   const [jobDesc, setJobDesc] = useState("");
@@ -101,7 +104,11 @@ export default function ResumeTailorOverlay({
     setResult("");
     try {
       const jobDescription = `Job Title: ${jobTitle}\n\n${jobDesc}`;
-      const resumeData = `Name: ${name}\nBackground & Skills: ${background}`;
+      const resumeData = `Name: ${name}\nBackground & Skills: ${background}${
+        hasResumeBoost
+          ? "\nResume Boost active: include an extra achievement-writing example."
+          : ""
+      }`;
       const res = await actor.tailorResume(jobDescription, resumeData);
       if (res.__kind__ === "ok") {
         setResult(res.ok);
@@ -114,7 +121,7 @@ export default function ResumeTailorOverlay({
     } finally {
       setLoading(false);
     }
-  }, [actor, name, jobTitle, jobDesc, background]);
+  }, [actor, name, jobTitle, jobDesc, background, hasResumeBoost]);
 
   const handleClose = useCallback(() => {
     GameBridge.emit("careerToolClose", undefined);

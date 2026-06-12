@@ -1,5 +1,6 @@
 import { createActor } from "@/backend";
 import { GameBridge } from "@/game/GameBridge";
+import { useProfile } from "@/hooks/useProfile";
 import { useActor } from "@caffeineai/core-infrastructure";
 import { useCallback, useState } from "react";
 import ReactMarkdown from "react-markdown";
@@ -58,6 +59,8 @@ export default function CoverLetterOverlay({
   onClose,
 }: { onClose: () => void }) {
   const { actor } = useActor(createActor);
+  const { data: profile } = useProfile();
+  const hasScroll = profile?.inventory.includes("cover_letter_scroll") ?? false;
   const [name, setName] = useState("");
   const [jobTitle, setJobTitle] = useState("");
   const [company, setCompany] = useState("");
@@ -87,7 +90,11 @@ export default function CoverLetterOverlay({
     setResult("");
     try {
       const candidateName = name || "the applicant";
-      const candidateBg = `You are Penny, an expert cover letter writer. Write a professional, engaging cover letter for ${candidateName} applying for ${jobTitle} at ${company}. Their experience: ${background}\n\nJob Description: ${jobDesc}\n\nWrite the full cover letter in first person as if you ARE the user. Make it specific, warm, and compelling. No placeholder text.`;
+      const candidateBg = `You are Penny, an expert cover letter writer. Write a professional, engaging cover letter for ${candidateName} applying for ${jobTitle} at ${company}. Their experience: ${background}\n\nJob Description: ${jobDesc}\n\nWrite the full cover letter in first person as if you ARE the user. Make it specific, warm, and compelling. No placeholder text.${
+        hasScroll
+          ? " Cover Letter Scroll active: use a strong hook, evidence paragraph, and concise close."
+          : ""
+      }`;
       const res = await actor.generateCoverLetter(
         jobTitle,
         company,
@@ -107,7 +114,7 @@ export default function CoverLetterOverlay({
     } finally {
       setLoading(false);
     }
-  }, [actor, name, jobTitle, company, jobDesc, background]);
+  }, [actor, name, jobTitle, company, jobDesc, background, hasScroll]);
 
   const handleClose = useCallback(() => {
     GameBridge.emit("careerToolClose", undefined);

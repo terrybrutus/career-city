@@ -17,7 +17,8 @@ type GameBridgeEvent =
   | "interiorEntered"
   | "interiorExited"
   | "careerToolOpen"
-  | "careerToolClose";
+  | "careerToolClose"
+  | "careerProgressUpdated";
 
 type GameBridgeCallback = (data?: unknown) => void;
 

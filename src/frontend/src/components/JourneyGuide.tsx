@@ -1,4 +1,5 @@
 import { GameBridge } from "@/game/GameBridge";
+import { loadCareerProgress } from "@/game/careerProgress";
 import { useEffect, useMemo, useState } from "react";
 
 const STORAGE_KEY = "career_city_journey_stage";
@@ -53,7 +54,6 @@ export default function JourneyGuide() {
       GameBridge.on("dialogueOpened", (data) => {
         const npc = data as { id?: string };
         if (npc?.id === "sam_sage") advanceTo(1);
-        if (npc?.id === "ed_recruiter" && loadStage() >= 6) advanceTo(7);
       }),
       GameBridge.on("interiorEntered", (data) => {
         const payload = data as { locationId?: string };
@@ -67,6 +67,9 @@ export default function JourneyGuide() {
         if (payload?.reason === "interview_answer") advanceTo(6);
       }),
       GameBridge.on("shopItemPurchased", () => advanceTo(5)),
+      GameBridge.on("careerProgressUpdated", () => {
+        if (loadCareerProgress().chapterComplete) advanceTo(7);
+      }),
     ];
 
     return () => {

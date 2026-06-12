@@ -1,10 +1,13 @@
+import CareerPassport from "@/components/CareerPassport";
 import CoverLetterOverlay from "@/components/CoverLetterOverlay";
 import InterviewCoachOverlay from "@/components/InterviewCoachOverlay";
 import ItemShopOverlay from "@/components/ItemShopOverlay";
 import JourneyGuide from "@/components/JourneyGuide";
+import RecruiterEncounter from "@/components/RecruiterEncounter";
 import ResumeTailorOverlay from "@/components/ResumeTailorOverlay";
 import { GameBridge } from "@/game/GameBridge";
 import { musicManager } from "@/game/MusicManager";
+import { CareerProgressTracker } from "@/game/careerProgress";
 import { CoverLetterScene } from "@/game/scenes/CoverLetterScene";
 import { InterviewCoachScene } from "@/game/scenes/InterviewCoachScene";
 import { ItemShopScene } from "@/game/scenes/ItemShopScene";
@@ -22,7 +25,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 // ─────────────────────────────────────────────────────
 type HUDTab = "quests" | "music" | "howto" | null;
 
-function UnifiedHUDPanel() {
+function UnifiedHUDPanel({ onPassport }: { onPassport: () => void }) {
   const [activeTab, setActiveTab] = useState<HUDTab>(null);
   const [trackName, setTrackName] = useState("—");
   const [paused, setPaused] = useState(false);
@@ -92,6 +95,16 @@ function UnifiedHUDPanel() {
           boxShadow: "0 0 12px rgba(57,255,20,0.15)",
         }}
       >
+        <button
+          type="button"
+          title="Career Passport"
+          aria-label="Open Career Passport"
+          data-ocid="hud.passport_button"
+          style={iconBtnStyle(false)}
+          onClick={onPassport}
+        >
+          ID
+        </button>
         <button
           type="button"
           title="Quests (Q)"
@@ -506,6 +519,8 @@ export default function GamePage() {
 
   // Career tool overlay state
   const [activeTool, setActiveTool] = useState<string | null>(null);
+  const [passportOpen, setPassportOpen] = useState(false);
+  const [recruiterOpen, setRecruiterOpen] = useState(false);
 
   // ── Phaser game lifecycle ──────────────────────────
   useEffect(() => {
@@ -564,6 +579,7 @@ export default function GamePage() {
         // This prevents stale index from a previous NPC causing an undefined read.
         setDialogueIndex(0);
         setActiveNPC(npcData);
+        if (npcData.id === "ed_recruiter") setRecruiterOpen(true);
       }
     });
 
@@ -596,7 +612,11 @@ export default function GamePage() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        if (activeTool) {
+        if (passportOpen) {
+          setPassportOpen(false);
+        } else if (recruiterOpen) {
+          setRecruiterOpen(false);
+        } else if (activeTool) {
           setActiveTool(null);
           GameBridge.emit("careerToolClose", undefined);
         } else {
@@ -608,7 +628,7 @@ export default function GamePage() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [activeTool]);
+  }, [activeTool, passportOpen, recruiterOpen]);
 
   // ── Dialogue handlers ──────────────────────────────
   const handleAdvance = useCallback(() => {
@@ -701,8 +721,9 @@ export default function GamePage() {
       />
 
       {/* Unified HUD Panel — top-right, all controls in one place */}
-      <UnifiedHUDPanel />
+      <UnifiedHUDPanel onPassport={() => setPassportOpen(true)} />
       <JourneyGuide />
+      <CareerProgressTracker />
 
       {/* CRT scanline overlay (CSS) */}
       <div
@@ -738,6 +759,17 @@ export default function GamePage() {
       )}
       {activeTool === "item-shop" && (
         <ItemShopOverlay onClose={() => setActiveTool(null)} />
+      )}
+      {passportOpen && (
+        <CareerPassport onClose={() => setPassportOpen(false)} />
+      )}
+      {recruiterOpen && (
+        <RecruiterEncounter
+          onClose={() => {
+            setRecruiterOpen(false);
+            handleClose();
+          }}
+        />
       )}
     </div>
   );

@@ -1,5 +1,6 @@
 import { createActor } from "@/backend";
 import { GameBridge } from "@/game/GameBridge";
+import { useProfile } from "@/hooks/useProfile";
 import { useActor } from "@caffeineai/core-infrastructure";
 import { useCallback, useState } from "react";
 import ReactMarkdown from "react-markdown";
@@ -51,6 +52,9 @@ export default function InterviewCoachOverlay({
   onClose,
 }: { onClose: () => void }) {
   const { actor } = useActor(createActor);
+  const { data: profile } = useProfile();
+  const hasConfidence =
+    profile?.inventory.includes("confidence_elixir") ?? false;
   const [phase, setPhase] = useState<Phase>("setup");
   const [state, setState] = useState<InterviewState>({
     jobTitle: "",
@@ -63,6 +67,7 @@ export default function InterviewCoachOverlay({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [isCopied, setIsCopied] = useState(false);
+  const [showHint, setShowHint] = useState(false);
 
   const startInterview = useCallback(async () => {
     if (!actor) {
@@ -394,6 +399,42 @@ export default function InterviewCoachOverlay({
                 </ReactMarkdown>
               </div>
             </div>
+
+            {hasConfidence && (
+              <div style={{ marginBottom: 14 }}>
+                <button
+                  type="button"
+                  onClick={() => setShowHint((value) => !value)}
+                  style={{
+                    width: "100%",
+                    padding: "9px 12px",
+                    background: ACCENT_DIM,
+                    border: `2px solid ${ACCENT}`,
+                    color: ACCENT,
+                    fontFamily: FONT,
+                    cursor: "pointer",
+                  }}
+                  data-ocid="interview_coach.hint_button"
+                >
+                  CONFIDENCE ELIXIR: {showHint ? "HIDE HINT" : "REVEAL HINT"}
+                </button>
+                {showHint && (
+                  <div
+                    style={{
+                      marginTop: 8,
+                      padding: 10,
+                      border: "1px solid rgba(255,170,0,0.35)",
+                      color: TEXT,
+                      fontSize: 13,
+                      lineHeight: 1.55,
+                    }}
+                  >
+                    Build a quick STAR answer: name the situation, your task,
+                    the action you personally took, and a measurable result.
+                  </div>
+                )}
+              </div>
+            )}
 
             <div style={{ marginBottom: 14 }}>
               <div
