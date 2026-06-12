@@ -1,0 +1,28 @@
+{
+  "overview": "Career City is a retro RPG town for job seekers, inspired by Zelda and Pokemon. Explore a pixel-art top-down town, enter career tool buildings to build resumes and prep for interviews, talk to NPCs with dry humor, earn XP and level up from Intern to CTO, and save your progress with Internet Identity login.",
+  "features": [
+    "Phaser 3 pixel-art town map with Ansimuz animated tilesets",
+    "Four career tool buildings: Resume Tailor, Cover Letter Generator, Interview Coach, Item Shop",
+    "Per-location music with smooth Zelda/Pokemon-style fade transitions",
+    "Pokemon-style NPCs with quests and dry self-aware humor",
+    "XP and Career Level system (Intern to CTO)",
+    "Minimizable minimap with fast-travel including Town Square",
+    "Minimizable Quest Log overlay",
+    "HUD with CRT/scanline effects",
+    "Landscape-only mobile with on-screen joystick",
+    "WCAG/Section 508 compliant text (18px minimum, high contrast)",
+    "Internet Identity login with backend save state"
+  ],
+  "category": "games",
+  "tags": [
+    "retro-rpg",
+    "pixel-art",
+    "job-seekers",
+    "phaser3",
+    "career-tools",
+    "zelda-style",
+    "pokemon-style",
+    "internet-identity"
+  ],
+  "last_updated": "2026-05-05T16:08:09.757Z"
+}
