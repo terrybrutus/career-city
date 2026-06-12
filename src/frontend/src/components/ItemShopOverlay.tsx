@@ -1,9 +1,10 @@
 import { createActor } from "@/backend";
 import { GameBridge } from "@/game/GameBridge";
+import { useModalFocus } from "@/hooks/useModalFocus";
 import { useProfile } from "@/hooks/useProfile";
 import { useActor } from "@caffeineai/core-infrastructure";
-import { useQueryClient } from "@tanstack/react-query";
-import { useCallback, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useCallback, useMemo, useRef, useState } from "react";
 
 const ACCENT = "#8844ff";
 const ACCENT_DIM = "rgba(136,68,255,0.15)";
@@ -22,7 +23,7 @@ interface ShopItem {
   color: string;
 }
 
-const SHOP_ITEMS: ShopItem[] = [
+const FALLBACK_ITEMS: ShopItem[] = [
   {
     id: "resume_boost",
     emoji: "📄",
@@ -68,7 +69,31 @@ const SHOP_ITEMS: ShopItem[] = [
 export default function ItemShopOverlay({ onClose }: { onClose: () => void }) {
   const { actor } = useActor(createActor);
   const { data: profile } = useProfile();
+  const modalRef = useRef<HTMLDivElement>(null);
+  useModalFocus(modalRef, onClose);
   const qc = useQueryClient();
+  const { data: backendItems } = useQuery({
+    queryKey: ["shop-items"],
+    enabled: Boolean(actor),
+    queryFn: () => actor?.listShopItems(),
+    staleTime: Number.POSITIVE_INFINITY,
+  });
+  const items = useMemo(
+    () =>
+      backendItems?.map((item, index) => ({
+        id: item.id,
+        name: item.name,
+        description: item.description,
+        price: Number(item.xpCost),
+        emoji:
+          FALLBACK_ITEMS.find((fallback) => fallback.id === item.id)?.emoji ??
+          "ITEM",
+        color:
+          FALLBACK_ITEMS.find((fallback) => fallback.id === item.id)?.color ??
+          ["#ff00ff", "#ffaa00", "#4488ff", "#00ffff", "#44ff88"][index % 5]!,
+      })) ?? FALLBACK_ITEMS,
+    [backendItems],
+  );
   const [purchasing, setPurchasing] = useState<string | null>(null);
   const [purchased, setPurchased] = useState<Set<string>>(
     () => new Set(profile?.inventory ?? []),
@@ -95,6 +120,7 @@ export default function ItemShopOverlay({ onClose }: { onClose: () => void }) {
           itemId: item.id,
           xpCost: item.price,
         });
+        GameBridge.emit("missionCompleted", { missionId: "choose_power_up" });
         void qc.invalidateQueries({ queryKey: ["profile"] });
       } catch {
         setError(`Failed to purchase ${item.name}.`);
@@ -126,6 +152,8 @@ export default function ItemShopOverlay({ onClose }: { onClose: () => void }) {
         padding: 16,
       }}
       data-ocid="item_shop.dialog"
+      ref={modalRef}
+      aria-label="Preparation Shop"
     >
       <div
         style={{
@@ -159,7 +187,7 @@ export default function ItemShopOverlay({ onClose }: { onClose: () => void }) {
             fontFamily: FONT,
           }}
         >
-          [ESC]
+          Close
         </button>
 
         {/* Header */}
@@ -198,7 +226,8 @@ export default function ItemShopOverlay({ onClose }: { onClose: () => void }) {
               marginTop: 4,
             }}
           >
-            Power-ups cost XP and remain in your inventory. No refunds.
+            Preparation tools use Career Tokens. Lifetime XP and level never
+            decrease.
           </div>
         </div>
 
@@ -225,7 +254,7 @@ export default function ItemShopOverlay({ onClose }: { onClose: () => void }) {
           }}
           data-ocid="item_shop.list"
         >
-          {SHOP_ITEMS.map((item, i) => {
+          {items.map((item, i) => {
             const isBought = purchased.has(item.id);
             const isBuying = purchasing === item.id;
             return (
@@ -260,7 +289,7 @@ export default function ItemShopOverlay({ onClose }: { onClose: () => void }) {
                       {item.name}
                     </div>
                     <div style={{ color: ACCENT, fontSize: 11 }}>
-                      {item.price} XP
+                      {item.price} TOKENS
                     </div>
                   </div>
                 </div>
@@ -316,7 +345,7 @@ export default function ItemShopOverlay({ onClose }: { onClose: () => void }) {
             marginTop: 16,
           }}
         >
-          Items acquired this session: {purchased.size} / {SHOP_ITEMS.length}
+          Items acquired: {purchased.size} / {items.length}
         </div>
       </div>
     </div>

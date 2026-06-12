@@ -1,6 +1,5 @@
 import { NPCS } from "@/data/npcs";
 import { GameBridge } from "@/game/GameBridge";
-import { musicManager } from "@/game/MusicManager";
 import { BaseScene } from "@/game/scenes/BaseScene";
 import { isTypingInField } from "@/game/utils/inputFocusGuard";
 import type { NPC } from "@/types/game";
@@ -220,7 +219,6 @@ export class TownScene extends BaseScene {
     this.createPlayer(data?.returnX, data?.returnY);
     this.setupInput();
     this.setupJoystick();
-    this.addScanlineOverlay();
 
     // Camera follows player
     this.cameras.main.startFollow(this.player, true, 0.08, 0.08);
@@ -231,7 +229,6 @@ export class TownScene extends BaseScene {
     }
 
     // Start town music
-    void musicManager.fadeToTrack("town_square");
 
     // Emit location event
     GameBridge.emit("locationChanged", "town_square");
@@ -1349,6 +1346,11 @@ export class TownScene extends BaseScene {
     }
 
     if (nearNPC) {
+      if (this.lastTipNpcId !== nearNPC.npcId) {
+        this.tipBubble?.destroy();
+        this.lastTipNpcId = nearNPC.npcId;
+        this.showNPCTipBubble(nearNPC.npcId, nearNPC.x, nearNPC.y);
+      }
       this.updateNPCInteractPrompt(nearNPC.npcId);
     }
   }
@@ -1421,9 +1423,23 @@ export class TownScene extends BaseScene {
     this.promptBg = this.add.graphics();
     this.promptBg.setScrollFactor(0).setDepth(7400);
     this.promptBg.fillStyle(0x040414, 0.94);
-    this.promptBg.fillRoundedRect(210, this.scale.height - 58, 380, 38, 5);
+    const promptWidth = Math.min(380, this.scale.width - 24);
+    const promptX = (this.scale.width - promptWidth) / 2;
+    this.promptBg.fillRoundedRect(
+      promptX,
+      this.scale.height - 58,
+      promptWidth,
+      38,
+      5,
+    );
     this.promptBg.lineStyle(2, 0xc0c0c0, 0.85);
-    this.promptBg.strokeRoundedRect(210, this.scale.height - 58, 380, 38, 5);
+    this.promptBg.strokeRoundedRect(
+      promptX,
+      this.scale.height - 58,
+      promptWidth,
+      38,
+      5,
+    );
 
     this.promptText = this.add
       .text(
@@ -1536,7 +1552,6 @@ export class TownScene extends BaseScene {
       // Stop music immediately so the interior scene starts its track fresh.
       // If we leave town music running or mid-fade, the interior's fadeToTrack
       // may hit the "already playing" guard and stay silent.
-      musicManager.stopAll();
 
       this.cameras.main.fadeOut(280, 0, 0, 0);
       this.cameras.main.once("camerafadeoutcomplete", () => {

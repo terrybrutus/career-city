@@ -1,8 +1,14 @@
 import { createActor } from "@/backend";
 import { GameBridge } from "@/game/GameBridge";
+import {
+  clearDraft,
+  loadDraft,
+  useAutosaveDraft,
+} from "@/hooks/useAutosaveDraft";
+import { useModalFocus } from "@/hooks/useModalFocus";
 import { useProfile } from "@/hooks/useProfile";
 import { useActor } from "@caffeineai/core-infrastructure";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 
 // ── Shared RPG overlay styles ─────────────────────────────────────────
@@ -67,15 +73,30 @@ export default function ResumeTailorOverlay({
 }: { onClose: () => void }) {
   const { actor } = useActor(createActor);
   const { data: profile } = useProfile();
+  const draft = useRef(
+    loadDraft("career_city_resume_draft", {
+      name: "",
+      jobTitle: "",
+      jobDesc: "",
+      background: "",
+    }),
+  ).current;
+  const modalRef = useRef<HTMLDivElement>(null);
+  useModalFocus(modalRef, onClose);
   const hasResumeBoost = profile?.inventory.includes("resume_boost") ?? false;
-  const [name, setName] = useState("");
-  const [jobTitle, setJobTitle] = useState("");
-  const [jobDesc, setJobDesc] = useState("");
-  const [background, setBackground] = useState("");
+  const [name, setName] = useState(draft.name);
+  const [jobTitle, setJobTitle] = useState(draft.jobTitle);
+  const [jobDesc, setJobDesc] = useState(draft.jobDesc);
+  const [background, setBackground] = useState(draft.background);
   const [result, setResult] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [isCopied, setIsCopied] = useState(false);
+  useAutosaveDraft(
+    "career_city_resume_draft",
+    { name, jobTitle, jobDesc, background },
+    !result && Boolean(name || jobTitle || jobDesc || background),
+  );
 
   const handleResumeUpload = useCallback(async (file: File | undefined) => {
     if (!file) return;
@@ -112,7 +133,16 @@ export default function ResumeTailorOverlay({
       const res = await actor.tailorResume(jobDescription, resumeData);
       if (res.__kind__ === "ok") {
         setResult(res.ok);
-        GameBridge.emit("xpGained", { amount: 100, reason: "resume_tailored" });
+        await actor.createResume(
+          `${name || "Player"} - ${jobTitle}`,
+          "",
+          "",
+          res.ok,
+          [],
+          [],
+        );
+        clearDraft("career_city_resume_draft");
+        GameBridge.emit("missionCompleted", { missionId: "craft_resume" });
       } else {
         setError(res.err ?? "Something went wrong.");
       }
@@ -142,6 +172,8 @@ export default function ResumeTailorOverlay({
         padding: 16,
       }}
       data-ocid="resume_tailor.dialog"
+      ref={modalRef}
+      aria-label="Resume Tailor"
     >
       {/* Modal */}
       <div
@@ -177,7 +209,7 @@ export default function ResumeTailorOverlay({
             fontFamily: FONT,
           }}
         >
-          [ESC]
+          Close
         </button>
 
         {/* Header */}
@@ -423,10 +455,17 @@ export default function ResumeTailorOverlay({
               <button
                 type="button"
                 onClick={() => {
-                  void navigator.clipboard.writeText(result).then(() => {
-                    setIsCopied(true);
-                    setTimeout(() => setIsCopied(false), 2000);
-                  });
+                  void navigator.clipboard
+                    .writeText(result)
+                    .then(() => {
+                      setIsCopied(true);
+                      setTimeout(() => setIsCopied(false), 2000);
+                    })
+                    .catch(() =>
+                      setError(
+                        "Copy failed. Select the advice and copy it manually.",
+                      ),
+                    );
                 }}
                 data-ocid="resume_tailor.copy_button"
                 style={{

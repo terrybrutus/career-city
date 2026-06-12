@@ -1,36 +1,51 @@
+import { createActor } from "@/backend";
+import { GameBridge } from "@/game/GameBridge";
 import { CREDENTIALS, useCareerProgress } from "@/game/careerProgress";
+import { useModalFocus } from "@/hooks/useModalFocus";
 import { useProfile } from "@/hooks/useProfile";
-
-const NPC_NAMES: Record<string, string> = {
-  sam_sage: "Sam",
-  ed_recruiter: "Ed",
-  vera_hr: "Vera",
-  chad_coach: "Chad",
-  penny_writer: "Penny",
-  felix_shop: "Felix",
-};
-
-const LOCATION_NAMES: Record<string, string> = {
-  town_square: "Town Square",
-  resume_tailor: "Resume Tailor",
-  cover_letter_corner: "Cover Letter Corner",
-  interview_coach: "Interview Coach",
-  item_shop: "Item Shop",
-};
+import { useQuests } from "@/hooks/useQuests";
+import { useActor } from "@caffeineai/core-infrastructure";
+import { useQuery } from "@tanstack/react-query";
+import { useRef } from "react";
 
 export default function CareerPassport({ onClose }: { onClose: () => void }) {
   const progress = useCareerProgress();
   const { data: profile } = useProfile();
+  const { completedQuests } = useQuests();
+  const completed = new Set(completedQuests.map((quest) => quest.questId));
+  const { actor } = useActor(createActor);
+  const { data: journal } = useQuery({
+    queryKey: ["career-journal"],
+    enabled: Boolean(actor),
+    queryFn: async () => {
+      if (!actor) return { resumes: [], letters: [], interviews: [] };
+      const [resumes, letters, interviews] = await Promise.all([
+        actor.listResumes(),
+        actor.listCoverLetters(),
+        actor.listInterviewNotes(),
+      ]);
+      return { resumes, letters, interviews };
+    },
+  });
   const credentials = Object.values(CREDENTIALS);
+  const modalRef = useRef<HTMLElement>(null);
+  useModalFocus(modalRef, onClose);
+  const copyShareLink = (path: string) =>
+    navigator.clipboard
+      .writeText(`${window.location.origin}${path}`)
+      .catch(() =>
+        window.alert("Copy failed. Please copy the URL from the address bar."),
+      );
 
   return (
     <div className="game-modal-backdrop" data-ocid="passport.dialog">
       <section
+        ref={modalRef}
         className="game-modal passport-panel"
         aria-label="Career Passport"
       >
         <button className="modal-close" type="button" onClick={onClose}>
-          [ESC]
+          Close
         </button>
         <p className="eyebrow">CAREER CITY RECORD</p>
         <h1>CAREER PASSPORT</h1>
@@ -63,38 +78,95 @@ export default function CareerPassport({ onClose }: { onClose: () => void }) {
             ))}
           </PassportSection>
 
-          <PassportSection title="People Met">
-            <p>
-              {progress.discoveredNpcs.length
-                ? progress.discoveredNpcs
-                    .map((id) => NPC_NAMES[id] ?? id)
-                    .join(", ")
-                : "No introductions yet."}
-            </p>
-          </PassportSection>
-
-          <PassportSection title="Places Visited">
-            <p>
-              {progress.visitedLocations
-                .map((id) => LOCATION_NAMES[id] ?? id)
-                .join(", ")}
-            </p>
-          </PassportSection>
-
           <PassportSection title="Inventory">
             <p>
               {profile?.inventory.length
                 ? profile.inventory
                     .map((item) => item.replaceAll("_", " "))
                     .join(", ")
-                : "No power-ups acquired."}
+                : "No preparation tools acquired."}
+            </p>
+          </PassportSection>
+
+          <PassportSection title="Career Journal">
+            <p>
+              {journal
+                ? `${journal.resumes.length} saved resume${journal.resumes.length === 1 ? "" : "s"}, ${journal.letters.length} cover letter${journal.letters.length === 1 ? "" : "s"}, and ${journal.interviews.length} interview note${journal.interviews.length === 1 ? "" : "s"}.`
+                : "Your saved work will appear here."}
+            </p>
+            <div className="path-buttons">
+              {journal?.resumes.at(-1) && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    void copyShareLink(
+                      `/share/resume/${journal.resumes.at(-1)!.shareToken}`,
+                    )
+                  }
+                >
+                  Copy latest resume share link
+                </button>
+              )}
+              {journal?.letters.at(-1) && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    void copyShareLink(
+                      `/share/cover-letter/${journal.letters.at(-1)!.shareToken}`,
+                    )
+                  }
+                >
+                  Copy latest cover-letter share link
+                </button>
+              )}
+            </div>
+          </PassportSection>
+
+          <PassportSection title="Opportunity Board">
+            <p>
+              {progress.chapterComplete
+                ? "Choose any role path to replay the workshops with a different career-story focus."
+                : "Complete Chapter 1 to unlock replayable role paths."}
+            </p>
+            <div className="path-buttons">
+              {[
+                ["path_engineering", "Engineering"],
+                ["path_product", "Product"],
+                ["path_operations", "Operations"],
+              ].map(([missionId, label]) => (
+                <button
+                  type="button"
+                  className={completed.has(missionId!) ? "selected" : ""}
+                  disabled={!progress.chapterComplete}
+                  key={missionId}
+                  onClick={() =>
+                    GameBridge.emit("missionCompleted", {
+                      missionId: missionId as
+                        | "path_engineering"
+                        | "path_product"
+                        | "path_operations",
+                    })
+                  }
+                >
+                  {completed.has(missionId!) ? "Selected: " : ""}
+                  {label}
+                </button>
+              ))}
+            </div>
+          </PassportSection>
+
+          <PassportSection title="Career Stories">
+            <p>
+              {completed.has("meet_everyone")
+                ? "Collected: Preparation creates options. Evidence makes your impact memorable. Feedback is information, not a penalty."
+                : "Meet every mentor to collect Career City's first story."}
             </p>
           </PassportSection>
 
           <PassportSection title="Chapter Status">
             <p className={progress.chapterComplete ? "success-text" : ""}>
               {progress.chapterComplete
-                ? "Career Compass restored. District Two awaits."
+                ? "Career Compass restored. District Two role paths are unlocked on the Opportunity Board."
                 : "Earn the Tailored Resume and Interview Badge, then report to Ed."}
             </p>
           </PassportSection>

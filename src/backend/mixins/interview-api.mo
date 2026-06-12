@@ -36,7 +36,6 @@ mixin (
       sessionDate, role, question, answer, score
     );
     nextInterviewId := newId;
-    ignore ProfileLib.addXp(profiles, caller, 100);
     note;
   };
 

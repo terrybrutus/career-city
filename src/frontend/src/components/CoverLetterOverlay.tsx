@@ -1,8 +1,14 @@
 import { createActor } from "@/backend";
 import { GameBridge } from "@/game/GameBridge";
+import {
+  clearDraft,
+  loadDraft,
+  useAutosaveDraft,
+} from "@/hooks/useAutosaveDraft";
+import { useModalFocus } from "@/hooks/useModalFocus";
 import { useProfile } from "@/hooks/useProfile";
 import { useActor } from "@caffeineai/core-infrastructure";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 
 const ACCENT = "#00ffff";
@@ -60,16 +66,32 @@ export default function CoverLetterOverlay({
 }: { onClose: () => void }) {
   const { actor } = useActor(createActor);
   const { data: profile } = useProfile();
+  const draft = useRef(
+    loadDraft("career_city_cover_letter_draft", {
+      name: "",
+      jobTitle: "",
+      company: "",
+      jobDesc: "",
+      background: "",
+    }),
+  ).current;
+  const modalRef = useRef<HTMLDivElement>(null);
+  useModalFocus(modalRef, onClose);
   const hasScroll = profile?.inventory.includes("cover_letter_scroll") ?? false;
-  const [name, setName] = useState("");
-  const [jobTitle, setJobTitle] = useState("");
-  const [company, setCompany] = useState("");
-  const [jobDesc, setJobDesc] = useState("");
-  const [background, setBackground] = useState("");
+  const [name, setName] = useState(draft.name);
+  const [jobTitle, setJobTitle] = useState(draft.jobTitle);
+  const [company, setCompany] = useState(draft.company);
+  const [jobDesc, setJobDesc] = useState(draft.jobDesc);
+  const [background, setBackground] = useState(draft.background);
   const [result, setResult] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [isCopied, setIsCopied] = useState(false);
+  useAutosaveDraft(
+    "career_city_cover_letter_draft",
+    { name, jobTitle, company, jobDesc, background },
+    !result && Boolean(name || jobTitle || company || jobDesc || background),
+  );
 
   const handleSubmit = useCallback(async () => {
     if (!actor) {
@@ -102,9 +124,15 @@ export default function CoverLetterOverlay({
       );
       if (res.__kind__ === "ok") {
         setResult(res.ok);
-        GameBridge.emit("xpGained", {
-          amount: 75,
-          reason: "cover_letter_generated",
+        await actor.createCoverLetter(
+          jobTitle,
+          company,
+          res.ok,
+          "professional",
+        );
+        clearDraft("career_city_cover_letter_draft");
+        GameBridge.emit("missionCompleted", {
+          missionId: "craft_cover_letter",
         });
       } else {
         setError(res.err ?? "Something went wrong.");
@@ -134,6 +162,8 @@ export default function CoverLetterOverlay({
         padding: 16,
       }}
       data-ocid="cover_letter.dialog"
+      ref={modalRef}
+      aria-label="Cover Letter Corner"
     >
       <div
         style={{
@@ -167,7 +197,7 @@ export default function CoverLetterOverlay({
             fontFamily: FONT,
           }}
         >
-          [ESC]
+          Close
         </button>
 
         <div style={{ textAlign: "center", marginBottom: 20 }}>
@@ -394,10 +424,17 @@ export default function CoverLetterOverlay({
               <button
                 type="button"
                 onClick={() => {
-                  void navigator.clipboard.writeText(result).then(() => {
-                    setIsCopied(true);
-                    setTimeout(() => setIsCopied(false), 2000);
-                  });
+                  void navigator.clipboard
+                    .writeText(result)
+                    .then(() => {
+                      setIsCopied(true);
+                      setTimeout(() => setIsCopied(false), 2000);
+                    })
+                    .catch(() =>
+                      setError(
+                        "Copy failed. Select the letter and copy it manually.",
+                      ),
+                    );
                 }}
                 data-ocid="cover_letter.copy_button"
                 style={{

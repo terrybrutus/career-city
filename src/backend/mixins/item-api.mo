@@ -5,6 +5,7 @@ import ItemTypes "../types/item";
 import ProfileTypes "../types/profile";
 import CommonTypes "../types/common";
 import Runtime "mo:core/Runtime";
+import Nat "mo:core/Nat";
 
 mixin (
   profiles : Map.Map<CommonTypes.UserId, ProfileTypes.UserProfile>
@@ -14,8 +15,8 @@ mixin (
     ItemLib.listItems();
   };
 
-  /// Purchase an item by id, deducting XP from the caller's profile.
-  /// Returns #ok(true) on success, #err(message) if insufficient XP or item not found.
+  /// Purchase an item with Career Tokens. Tokens are derived from lifetime XP
+  /// minus the cost of owned items, so purchases never lower level progress.
   public shared ({ caller }) func purchaseItem(itemId : Text) : async { #ok : Bool; #err : Text } {
     if (caller.isAnonymous()) { Runtime.trap("Anonymous callers not allowed") };
     switch (ItemLib.getItem(itemId)) {
@@ -36,11 +37,24 @@ mixin (
         };
         if (alreadyOwned) {
           #err("You already own this item.")
-        } else if (profile.totalXp < item.xpCost) {
-          #err("Insufficient XP. Need " # item.xpCost.toText() # ", have " # profile.totalXp.toText())
         } else {
-          ignore ProfileLib.deductXpAndAddItem(profiles, caller, item.xpCost, itemId);
-          #ok(true)
+          let inventory = switch (profile.inventory) { case null { [] }; case (?owned) { owned } };
+          var spent : Nat = 0;
+          var i = 0;
+          while (i < inventory.size()) {
+            switch (ItemLib.getItem(inventory[i])) {
+              case (?ownedItem) { spent += ownedItem.xpCost };
+              case null {};
+            };
+            i += 1;
+          };
+          let available = if (profile.totalXp > spent) { Nat.sub(profile.totalXp, spent) } else { 0 };
+          if (available < item.xpCost) {
+            #err("Insufficient Career Tokens. Need " # item.xpCost.toText() # ", have " # available.toText())
+          } else {
+            ignore ProfileLib.addItem(profiles, caller, itemId);
+            #ok(true)
+          }
         };
       };
     };

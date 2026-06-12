@@ -1,8 +1,9 @@
 import { createActor } from "@/backend";
 import { GameBridge } from "@/game/GameBridge";
+import { useModalFocus } from "@/hooks/useModalFocus";
 import { useProfile } from "@/hooks/useProfile";
 import { useActor } from "@caffeineai/core-infrastructure";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 
 const ACCENT = "#ffaa00";
@@ -20,6 +21,19 @@ const CATEGORIES = [
   "Leadership",
   "Problem Solving",
 ];
+
+function evidenceScore(answer: string): bigint {
+  const lower = answer.toLowerCase();
+  const checks = [
+    answer.trim().split(/\s+/).length >= 45,
+    /\d/.test(answer),
+    ["i ", "my ", "me "].some((term) => lower.includes(term)),
+    ["result", "outcome", "impact", "improved", "reduced", "increased"].some(
+      (term) => lower.includes(term),
+    ),
+  ];
+  return BigInt(checks.filter(Boolean).length * 25);
+}
 
 function rpgInput(extra?: React.CSSProperties): React.CSSProperties {
   return {
@@ -53,6 +67,8 @@ export default function InterviewCoachOverlay({
 }: { onClose: () => void }) {
   const { actor } = useActor(createActor);
   const { data: profile } = useProfile();
+  const modalRef = useRef<HTMLDivElement>(null);
+  useModalFocus(modalRef, onClose);
   const hasConfidence =
     profile?.inventory.includes("confidence_elixir") ?? false;
   const [phase, setPhase] = useState<Phase>("setup");
@@ -125,7 +141,16 @@ export default function InterviewCoachOverlay({
           questionCount: s.questionCount + 1,
         }));
         setPhase("feedback");
-        GameBridge.emit("xpGained", { amount: 50, reason: "interview_answer" });
+        await actor.createInterviewNote(
+          BigInt(Date.now()) * 1_000_000n,
+          state.jobTitle,
+          state.question,
+          state.answer,
+          evidenceScore(state.answer),
+        );
+        GameBridge.emit("missionCompleted", {
+          missionId: "practice_interview",
+        });
       } else {
         setError(res.err ?? "Evaluation failed.");
       }
@@ -178,6 +203,8 @@ export default function InterviewCoachOverlay({
         padding: 16,
       }}
       data-ocid="interview_coach.dialog"
+      ref={modalRef}
+      aria-label="Interview Coach"
     >
       <div
         style={{
@@ -211,7 +238,7 @@ export default function InterviewCoachOverlay({
             fontFamily: FONT,
           }}
         >
-          [ESC]
+          Close
         </button>
 
         {/* Header */}
@@ -541,6 +568,11 @@ export default function InterviewCoachOverlay({
               }}
               data-ocid="interview_coach.success_state"
             >
+              <p>
+                Evidence self-check: {evidenceScore(state.answer).toString()}
+                /100. This checks specificity, ownership, measurable evidence,
+                and outcomes; it is not a hiring prediction.
+              </p>
               <ReactMarkdown
                 components={{
                   h1: ({ children }) => (
@@ -599,7 +631,12 @@ export default function InterviewCoachOverlay({
                     .then(() => {
                       setIsCopied(true);
                       setTimeout(() => setIsCopied(false), 2000);
-                    });
+                    })
+                    .catch(() =>
+                      setError(
+                        "Copy failed. Select the feedback and copy it manually.",
+                      ),
+                    );
                 }}
                 data-ocid="interview_coach.copy_button"
                 style={{

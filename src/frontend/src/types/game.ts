@@ -33,7 +33,7 @@ export interface DialogueEntry {
 
 export interface DialogueOption {
   label: string;
-  action: "accept_quest" | "decline" | "navigate" | "close" | "open_tool";
+  action: "decline" | "close" | "open_tool" | "open_recruiter";
   payload?: string;
 }
 
@@ -59,14 +59,6 @@ export interface QuestProgress {
   status: QuestStatus;
   xpReward: number;
   locationId: GameLocationId;
-}
-
-export interface QuestDefinition {
-  id: string;
-  title: string;
-  description: string;
-  locationId: GameLocationId;
-  xpReward: number;
 }
 
 export interface UserProfile {
@@ -120,33 +112,3 @@ export type GameAction =
   | { type: "INTERACT_NPC"; payload: NPC }
   | { type: "ADVANCE_DIALOGUE" }
   | { type: "CLOSE_DIALOGUE" };
-
-// New interior scene events
-export interface CareerToolOpenPayload {
-  route: string;
-}
-
-export interface SceneChangedPayload {
-  scene: "town" | "interior";
-}
-
-export interface ShopItemPurchasedPayload {
-  itemId: string;
-  xpCost: number;
-}
-
-// Music system
-export type MusicTrackMap = Record<GameLocationId, string>;
-
-// Asset registry type
-export interface AssetEntry {
-  primary: string;
-  fallback?: string;
-}
-
-export interface AssetRegistry {
-  player: AssetEntry;
-  npcs: Record<string, AssetEntry>;
-  tilesets: Record<string, AssetEntry>;
-  music: MusicTrackMap;
-}

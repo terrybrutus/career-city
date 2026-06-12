@@ -1,6 +1,5 @@
 import { NPCS } from "@/data/npcs";
 import { GameBridge } from "@/game/GameBridge";
-import { musicManager } from "@/game/MusicManager";
 import { BaseScene } from "@/game/scenes/BaseScene";
 import { isTypingInField } from "@/game/utils/inputFocusGuard";
 import type { GameLocationId } from "@/types/game";
@@ -163,7 +162,6 @@ export abstract class BaseInteriorScene extends BaseScene {
     this.setupExitZone();
 
     // CRT overlay
-    this.addScanlineOverlay();
 
     // Camera follows player; slight zoom for interior feel
     this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
@@ -172,7 +170,6 @@ export abstract class BaseInteriorScene extends BaseScene {
     this.cameras.main.fadeIn(320, 0, 0, 0);
 
     // Start location music — safe async call, no awaiting in create
-    void musicManager.fadeToTrack(this.getLocationId());
 
     // Belt-and-suspenders: if Phaser ever uses scene.wake() instead of scene.start(),
     // the wake event fires but create() does not — so we wire up music here too.
@@ -182,8 +179,6 @@ export abstract class BaseInteriorScene extends BaseScene {
         this.returnY = wakeData.returnY;
       }
       // Stop whatever is playing and start the building track fresh
-      musicManager.stopAll();
-      void musicManager.fadeToTrack(this.getLocationId());
       GameBridge.emit("interiorEntered", { locationId: this.getLocationId() });
       GameBridge.emit("locationChanged", this.getLocationId());
     });
@@ -599,7 +594,6 @@ export abstract class BaseInteriorScene extends BaseScene {
     // Do NOT call fadeToTrack here: it sets currentLocationId to "town_square" before
     // TownScene runs, so TownScene's own fadeToTrack call hits the "already playing" guard
     // and never actually starts the track.
-    musicManager.stopAll();
 
     // Emit exit event — payload contains only locationId, no NPC/dialogue data
     GameBridge.emit("interiorExited", { locationId });
@@ -627,6 +621,10 @@ export abstract class BaseInteriorScene extends BaseScene {
     );
     // Show tip bubble within 100px
     const inTipRange = d < 100;
+    if (inTipRange && !this.tipVisible) {
+      this.tipVisible = true;
+      this.showTipBubble();
+    }
     if (!inTipRange && this.tipVisible) {
       this.tipVisible = false;
       if (this.tipBubble) {

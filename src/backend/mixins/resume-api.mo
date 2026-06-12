@@ -38,7 +38,6 @@ mixin (
       caller, name, email, phone, summary, experiences, skills
     );
     nextResumeId := newId;
-    ignore ProfileLib.addXp(profiles, caller, 50);
     resume;
   };
 
@@ -57,10 +56,7 @@ mixin (
       name, email, phone, summary, experiences, skills
     );
     switch (result) {
-      case (?_) {
-        ignore ProfileLib.getOrCreate(profiles, caller);
-        ignore ProfileLib.addXp(profiles, caller, 25);
-      };
+      case (?_) { ignore ProfileLib.getOrCreate(profiles, caller) };
       case null {};
     };
     result;

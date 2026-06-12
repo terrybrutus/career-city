@@ -1,17 +1,11 @@
 import { createActor } from "@/backend";
 import { QuestStatus as BackendQuestStatus } from "@/backend";
-import { LOCATIONS } from "@/data/locations";
-import { QUEST_DEFINITIONS } from "@/data/quests";
 import { GameBridge } from "@/game/GameBridge";
+import { MISSIONS, missionById } from "@/game/missions";
 import type { QuestProgress } from "@/types/game";
 import { useActor } from "@caffeineai/core-infrastructure";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
-
-function locationIdForQuest(questId: string) {
-  const def = QUEST_DEFINITIONS.find((q) => q.id === questId);
-  return def?.locationId ?? "town_square";
-}
 
 export function useQuests() {
   const { actor, isFetching } = useActor(createActor);
@@ -28,32 +22,30 @@ export function useQuests() {
     queryKey: ["quests"],
     queryFn: async () => {
       if (!actor) {
-        return QUEST_DEFINITIONS.map((def) => ({
+        return MISSIONS.map((def) => ({
           questId: def.id,
           title: def.title,
-          description: def.description,
+          description: def.objective,
           status: "available" as const,
-          xpReward: def.xpReward,
-          locationId: def.locationId,
+          xpReward: def.reward,
+          locationId: "town_square",
         }));
       }
       const raw = await actor.listQuests();
-      return raw.map((rq) => {
-        const def = QUEST_DEFINITIONS.find((d) => d.id === rq.questId);
-        const locId = locationIdForQuest(rq.questId);
-        const loc = LOCATIONS.find((l) => l.id === locId);
+      return MISSIONS.map((def) => {
+        const rq = raw.find((item) => item.questId === def.id);
         return {
-          questId: rq.questId,
-          title: def?.title ?? rq.questId,
-          description: def?.description ?? "",
+          questId: def.id,
+          title: def.title,
+          description: def.objective,
           status:
-            rq.status === BackendQuestStatus.completed
+            rq?.status === BackendQuestStatus.completed
               ? ("completed" as const)
-              : rq.status === BackendQuestStatus.inProgress
+              : rq?.status === BackendQuestStatus.inProgress
                 ? ("active" as const)
                 : ("available" as const),
-          xpReward: Number(rq.xpReward),
-          locationId: loc?.id ?? "town_square",
+          xpReward: def.reward,
+          locationId: "town_square",
         };
       });
     },
@@ -84,8 +76,7 @@ export function useQuests() {
         BackendQuestStatus.completed,
         BigInt(xpReward),
       );
-      GameBridge.emit("xpGained", xpReward);
-      GameBridge.emit("questUpdated", questId);
+      GameBridge.emit("questUpdated", { questId });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["quests"] }),
   });
@@ -98,7 +89,10 @@ export function useQuests() {
     activeQuests: quests.filter((q) => q.status === "active"),
     completedQuests: quests.filter((q) => q.status === "completed"),
     acceptQuest: (questId: string) => acceptQuest.mutate(questId),
-    completeQuest: (questId: string, xpReward: number) =>
-      completeQuest.mutate({ questId, xpReward }),
+    completeQuest: (questId: string) =>
+      completeQuest.mutate({
+        questId,
+        xpReward: missionById(questId)?.reward ?? 0,
+      }),
   };
 }

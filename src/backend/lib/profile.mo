@@ -1,5 +1,4 @@
 import Map "mo:core/Map";
-import Nat "mo:core/Nat";
 import Time "mo:core/Time";
 import ProfileTypes "../types/profile";
 import CommonTypes "../types/common";
@@ -116,15 +115,12 @@ module {
     updated;
   };
 
-  public func deductXpAndAddItem(
+  public func addItem(
     profiles : Map.Map<CommonTypes.UserId, ProfileTypes.UserProfile>,
     userId : CommonTypes.UserId,
-    cost : Nat,
     itemId : Text
   ) : ProfileTypes.UserProfile {
     let existing = getOrCreate(profiles, userId);
-    let newXp = Nat.sub(existing.totalXp, cost);
-    let newLevel = computeLevel(newXp);
     let currentInventory : [Text] = switch (existing.inventory) {
       case (?inv) { inv };
       case null { [] };
@@ -135,9 +131,6 @@ module {
     );
     let updated : ProfileTypes.UserProfile = {
       existing with
-      totalXp = newXp;
-      careerLevel = newLevel;
-      levelTitle = levelTitle(newLevel);
       inventory = ?newInventory;
       lastUpdated = Time.now();
     };

@@ -7,7 +7,11 @@ import RecruiterEncounter from "@/components/RecruiterEncounter";
 import ResumeTailorOverlay from "@/components/ResumeTailorOverlay";
 import { GameBridge } from "@/game/GameBridge";
 import { musicManager } from "@/game/MusicManager";
-import { CareerProgressTracker } from "@/game/careerProgress";
+import {
+  CREDENTIALS,
+  CareerProgressTracker,
+  useCareerProgress,
+} from "@/game/careerProgress";
 import { loadGameSettings, saveGameSettings } from "@/game/gameSettings";
 import { CoverLetterScene } from "@/game/scenes/CoverLetterScene";
 import { InterviewCoachScene } from "@/game/scenes/InterviewCoachScene";
@@ -16,9 +20,7 @@ import { PreloadScene } from "@/game/scenes/PreloadScene";
 import { ResumeTailorScene } from "@/game/scenes/ResumeTailorScene";
 import { TownScene } from "@/game/scenes/TownScene";
 import { useProfile } from "@/hooks/useProfile";
-import { useQuests } from "@/hooks/useQuests";
 import type { NPC } from "@/types/game";
-import { useNavigate } from "@tanstack/react-router";
 import Phaser from "phaser";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -27,7 +29,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 // ─────────────────────────────────────────────────────
 type HUDTab = "status" | "quests" | "music" | "howto" | null;
 
-function UnifiedHUDPanel({ onPassport }: { onPassport: () => void }) {
+function UnifiedHUDPanel({
+  onPassport,
+  hidden,
+}: { onPassport: () => void; hidden: boolean }) {
   const { data: profile } = useProfile();
   const [activeTab, setActiveTab] = useState<HUDTab>(null);
   const [trackName, setTrackName] = useState("—");
@@ -97,6 +102,7 @@ function UnifiedHUDPanel({ onPassport }: { onPassport: () => void }) {
     flexShrink: 0,
   });
 
+  if (hidden) return null;
   return (
     <div
       className="control-dock"
@@ -365,6 +371,48 @@ function UnifiedHUDPanel({ onPassport }: { onPassport: () => void }) {
                     saveGameSettings(next);
                   }}
                 />
+                <label htmlFor="scanlines">CRT scanlines</label>
+                <input
+                  id="scanlines"
+                  type="checkbox"
+                  checked={settings.scanlines}
+                  onChange={(event) => {
+                    const next = {
+                      ...settings,
+                      scanlines: event.target.checked,
+                    };
+                    setSettings(next);
+                    saveGameSettings(next);
+                  }}
+                />
+                <label htmlFor="reduced-effects">Reduced effects</label>
+                <input
+                  id="reduced-effects"
+                  type="checkbox"
+                  checked={settings.reducedEffects}
+                  onChange={(event) => {
+                    const next = {
+                      ...settings,
+                      reducedEffects: event.target.checked,
+                    };
+                    setSettings(next);
+                    saveGameSettings(next);
+                  }}
+                />
+                <label htmlFor="untimed-practice">Untimed practice</label>
+                <input
+                  id="untimed-practice"
+                  type="checkbox"
+                  checked={settings.untimedPractice}
+                  onChange={(event) => {
+                    const next = {
+                      ...settings,
+                      untimedPractice: event.target.checked,
+                    };
+                    setSettings(next);
+                    saveGameSettings(next);
+                  }}
+                />
                 <label htmlFor="joystick-sensitivity">
                   Joystick sensitivity
                 </label>
@@ -384,6 +432,31 @@ function UnifiedHUDPanel({ onPassport }: { onPassport: () => void }) {
                     saveGameSettings(next);
                   }}
                 />
+              </div>
+              <div
+                className="workshop-nav"
+                aria-label="Accessible workshop navigator"
+              >
+                <PanelTitle>WORKSHOP NAVIGATOR</PanelTitle>
+                <p>
+                  Keyboard and touch alternative to walking through the canvas.
+                </p>
+                {[
+                  ["resume-tailor", "Vera - Resume Tailor"],
+                  ["cover-letter", "Penny - Cover Letter Corner"],
+                  ["interview-coach", "Chad - Interview Coach"],
+                  ["item-shop", "Felix - Preparation Shop"],
+                ].map(([tool, label]) => (
+                  <button
+                    type="button"
+                    key={tool}
+                    onClick={() =>
+                      GameBridge.emit("careerToolOpen", { tool: tool! })
+                    }
+                  >
+                    {label}
+                  </button>
+                ))}
               </div>
             </div>
           )}
@@ -443,6 +516,7 @@ function DialogueOverlay({
         boxSizing: "border-box",
       }}
       data-ocid="dialogue.panel"
+      aria-label={`Conversation with ${npc.name}`}
     >
       {/* Pixel-border box */}
       <div
@@ -601,8 +675,8 @@ function LocationBanner({ text, color }: { text: string; color: string }) {
 // GamePage
 // ─────────────────────────────────────────────────────
 export default function GamePage() {
-  const navigate = useNavigate();
-  const { acceptQuest } = useQuests();
+  const progress = useCareerProgress();
+  const [visualSettings, setVisualSettings] = useState(loadGameSettings);
   const containerRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<Phaser.Game | null>(null);
 
@@ -618,6 +692,15 @@ export default function GamePage() {
   const [activeTool, setActiveTool] = useState<string | null>(null);
   const [passportOpen, setPassportOpen] = useState(false);
   const [recruiterOpen, setRecruiterOpen] = useState(false);
+
+  useEffect(() => {
+    const update = (event: Event) =>
+      setVisualSettings(
+        (event as CustomEvent<ReturnType<typeof loadGameSettings>>).detail,
+      );
+    window.addEventListener("career-city-settings", update);
+    return () => window.removeEventListener("career-city-settings", update);
+  }, []);
 
   // ── Phaser game lifecycle ──────────────────────────
   useEffect(() => {
@@ -674,9 +757,26 @@ export default function GamePage() {
         // This prevents stale index from a previous NPC causing an undefined read.
         setDialogueIndex(0);
         if (npcData.id === "ed_recruiter") {
-          setActiveNPC(null);
-          setPassportOpen(false);
-          setRecruiterOpen(true);
+          const ready =
+            progress.credentials.includes(CREDENTIALS.resume) &&
+            progress.credentials.includes(CREDENTIALS.interview);
+          setActiveNPC({
+            ...npcData,
+            dialogue: [
+              {
+                speaker: "ED",
+                text: ready
+                  ? "Your passport shows focused preparation. Ready for a friendly recruiter simulation?"
+                  : "Finish a saved resume and one interview practice note, then I can run the recruiter simulation.",
+                options: ready
+                  ? [
+                      { label: "START SIMULATION", action: "open_recruiter" },
+                      { label: "KEEP PREPARING", action: "close" },
+                    ]
+                  : [{ label: "KEEP PREPARING", action: "close" }],
+              },
+            ],
+          });
         } else {
           setActiveNPC(npcData);
         }
@@ -712,7 +812,7 @@ export default function GamePage() {
       unsubToolOpen();
       unsubToolClose();
     };
-  }, []);
+  }, [progress.credentials]);
 
   // ── Keyboard: ESC closes dialogue or career tool ─────────
   useEffect(() => {
@@ -760,20 +860,14 @@ export default function GamePage() {
 
   const handleOption = useCallback(
     (action: string, payload?: string) => {
-      if (action === "navigate" && payload) {
+      if (action === "close" || action === "decline") {
         setActiveNPC(null);
         setDialogueIndex(0);
         GameBridge.emit("dialogueClosed");
-        void navigate({
-          to: payload as "/" | "/resume" | "/coverletter" | "/interview",
-        });
-      } else if (action === "close" || action === "decline") {
+      } else if (action === "open_recruiter") {
         setActiveNPC(null);
-        setDialogueIndex(0);
-        GameBridge.emit("dialogueClosed");
-      } else if (action === "accept_quest" && payload) {
-        acceptQuest(payload);
-        handleAdvance();
+        setPassportOpen(false);
+        setRecruiterOpen(true);
       } else if (action === "open_tool" && payload) {
         setActiveNPC(null);
         setDialogueIndex(0);
@@ -786,7 +880,7 @@ export default function GamePage() {
         handleAdvance();
       }
     },
-    [acceptQuest, navigate, handleAdvance, activeNPC?.id],
+    [handleAdvance, activeNPC?.id],
   );
 
   const handleClose = useCallback(() => {
@@ -838,6 +932,9 @@ export default function GamePage() {
 
       {/* Unified control dock */}
       <UnifiedHUDPanel
+        hidden={Boolean(
+          activeNPC || activeTool || passportOpen || recruiterOpen,
+        )}
         onPassport={() => {
           setRecruiterOpen(false);
           setActiveNPC(null);
@@ -845,14 +942,22 @@ export default function GamePage() {
           GameBridge.emit("careerToolOpen", { tool: "passport" });
         }}
       />
-      <JourneyGuide mode="tracker" />
+      {!activeNPC && !activeTool && !passportOpen && !recruiterOpen && (
+        <JourneyGuide mode="tracker" />
+      )}
       <CareerProgressTracker />
+      <output className="portrait-note">
+        Portrait mode is supported. Rotate to landscape for a wider view of
+        Career City.
+      </output>
 
       {/* CRT scanline overlay (CSS) */}
-      <div
-        className="absolute inset-0 pointer-events-none scanline"
-        style={{ zIndex: 200 }}
-      />
+      {visualSettings.scanlines && !visualSettings.reducedEffects && (
+        <div
+          className="absolute inset-0 pointer-events-none scanline"
+          style={{ zIndex: 200 }}
+        />
+      )}
 
       {/* NPC Dialogue */}
       {activeNPC && (

@@ -2,6 +2,8 @@ export type GameSettings = {
   movementSpeed: number;
   joystickSensitivity: number;
   scanlines: boolean;
+  reducedEffects: boolean;
+  untimedPractice: boolean;
 };
 
 const STORAGE_KEY = "career_city_game_settings";
@@ -9,6 +11,8 @@ const DEFAULTS: GameSettings = {
   movementSpeed: 1.25,
   joystickSensitivity: 1.35,
   scanlines: true,
+  reducedEffects: false,
+  untimedPractice: true,
 };
 
 export function loadGameSettings(): GameSettings {

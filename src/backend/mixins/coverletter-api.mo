@@ -36,7 +36,6 @@ mixin (
       caller, jobTitle, company, body, tone
     );
     nextCoverLetterId := newId;
-    ignore ProfileLib.addXp(profiles, caller, 75);
     cl;
   };
 

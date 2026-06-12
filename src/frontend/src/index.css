@@ -336,6 +336,28 @@ canvas {
   font-weight: 700;
 }
 
+.shared-artifact-page {
+  min-height: 100dvh;
+  overflow: auto;
+  padding: clamp(16px, 5vw, 64px);
+  background: #080814;
+}
+.shared-artifact-page article {
+  width: min(760px, 100%);
+  margin: 0 auto;
+  padding: clamp(20px, 5vw, 48px);
+  border: 2px solid #39ff14;
+  background: #101022;
+  color: #f4f0ff;
+}
+.shared-artifact-page h1 {
+  color: #39ff14;
+}
+.shared-body {
+  white-space: pre-wrap;
+  line-height: 1.7;
+}
+
 .control-dock {
   left: 50%;
   bottom: max(10px, env(safe-area-inset-bottom));
@@ -343,6 +365,10 @@ canvas {
   width: min-content;
   flex-direction: column-reverse !important;
   gap: 4px !important;
+}
+
+.portrait-note {
+  display: none;
 }
 
 .control-dock > div:first-child {
@@ -431,6 +457,26 @@ canvas {
 .settings-grid input {
   width: 100%;
   accent-color: #39ff14;
+}
+
+.workshop-nav {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+}
+.workshop-nav p {
+  margin: 0;
+  color: #d8d4e8;
+  font-size: 12px;
+}
+.workshop-nav button {
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 1px solid rgba(57, 255, 20, 0.55);
+  background: rgba(57, 255, 20, 0.06);
+  color: #f4f0ff;
+  text-align: left;
+  cursor: pointer;
 }
 
 .dock-stat-grid {
@@ -567,6 +613,23 @@ canvas {
   color: #39ff14 !important;
 }
 
+.path-buttons {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+}
+.path-buttons button {
+  min-height: 40px;
+  border: 1px solid rgba(0, 255, 255, 0.55);
+  background: rgba(0, 255, 255, 0.05);
+  color: #d8f4f8;
+  cursor: pointer;
+}
+.path-buttons button.selected {
+  border-color: #39ff14;
+  color: #39ff14;
+}
+
 .skill-row {
   display: flex;
   justify-content: space-between;
@@ -672,6 +735,23 @@ canvas {
 
   .game-modal h1 {
     padding-right: 56px;
+  }
+}
+
+@media (orientation: portrait) and (max-width: 700px) {
+  .portrait-note {
+    display: block;
+    position: fixed;
+    top: max(8px, env(safe-area-inset-top));
+    right: max(8px, env(safe-area-inset-right));
+    z-index: 950;
+    width: min(180px, 45dvw);
+    padding: 7px 9px;
+    border: 1px solid rgba(255, 170, 0, 0.65);
+    background: rgba(4, 4, 20, 0.9);
+    color: #f4ead0;
+    font-size: 10px;
+    line-height: 1.35;
   }
 }
 

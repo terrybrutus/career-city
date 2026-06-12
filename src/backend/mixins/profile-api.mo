@@ -23,16 +23,18 @@ mixin (
     ProfileLib.getOrCreate(profiles, caller);
   };
 
-  /// Add XP to the caller's profile.
+  /// Retained for interface compatibility. Rewards are awarded only by
+  /// server-owned artifact and mission completion rules.
   public shared ({ caller }) func updateXP(amount : Nat) : async () {
     if (caller.isAnonymous()) { Runtime.trap("Anonymous callers not allowed") };
-    ignore ProfileLib.addXp(profiles, caller, amount);
+    ignore amount;
+    ignore ProfileLib.getOrCreate(profiles, caller);
   };
 
   public shared ({ caller }) func recordNpcInteraction(npcId : Text) : async ProfileTypes.UserProfile {
     if (caller.isAnonymous()) { Runtime.trap("Anonymous callers not allowed") };
     ignore npcId; // npcId reserved for future NPC-specific XP bonuses
     ignore ProfileLib.getOrCreate(profiles, caller);
-    ProfileLib.addXp(profiles, caller, 10);
+    ProfileLib.getOrCreate(profiles, caller);
   };
 };

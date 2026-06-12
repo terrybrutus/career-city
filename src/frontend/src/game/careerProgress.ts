@@ -1,7 +1,6 @@
 import { GameBridge } from "@/game/GameBridge";
-import { useEffect, useState } from "react";
-
-const STORAGE_KEY = "career_city_passport_v1";
+import { useQuests } from "@/hooks/useQuests";
+import { useEffect } from "react";
 
 export const CREDENTIALS = {
   resume: "Tailored Resume",
@@ -10,136 +9,58 @@ export const CREDENTIALS = {
   chapter: "Career Compass",
 } as const;
 
-export interface CareerProgress {
-  credentials: string[];
-  discoveredNpcs: string[];
-  visitedLocations: string[];
-  skills: Record<
-    "resumeCraft" | "interviewing" | "storytelling" | "networking",
-    number
-  >;
-  chapterComplete: boolean;
-}
-
-const DEFAULT_PROGRESS: CareerProgress = {
-  credentials: [],
-  discoveredNpcs: [],
-  visitedLocations: ["town_square"],
-  skills: {
-    resumeCraft: 0,
-    interviewing: 0,
-    storytelling: 0,
-    networking: 0,
-  },
-  chapterComplete: false,
+const credentialMissions: Record<string, string> = {
+  craft_resume: CREDENTIALS.resume,
+  practice_interview: CREDENTIALS.interview,
+  craft_cover_letter: CREDENTIALS.coverLetter,
+  chapter_one_complete: CREDENTIALS.chapter,
 };
 
-export function loadCareerProgress(): CareerProgress {
-  try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}");
-    return {
-      ...DEFAULT_PROGRESS,
-      ...saved,
-      credentials: Array.isArray(saved.credentials) ? saved.credentials : [],
-      discoveredNpcs: Array.isArray(saved.discoveredNpcs)
-        ? saved.discoveredNpcs
-        : [],
-      visitedLocations: Array.isArray(saved.visitedLocations)
-        ? saved.visitedLocations
-        : ["town_square"],
-      skills: { ...DEFAULT_PROGRESS.skills, ...saved.skills },
-    };
-  } catch {
-    return DEFAULT_PROGRESS;
-  }
-}
-
-function saveCareerProgress(progress: CareerProgress) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
-  GameBridge.emit("careerProgressUpdated", progress);
-}
-
-function addUnique(values: string[], value: string) {
-  return values.includes(value) ? values : [...values, value];
-}
-
-export function updateCareerProgress(
-  update: (current: CareerProgress) => CareerProgress,
-) {
-  const current = loadCareerProgress();
-  const next = update(current);
-  saveCareerProgress(next);
-  return next;
-}
-
 export function useCareerProgress() {
-  const [progress, setProgress] = useState(loadCareerProgress);
-
-  useEffect(
-    () =>
-      GameBridge.on("careerProgressUpdated", () =>
-        setProgress(loadCareerProgress()),
-      ),
-    [],
-  );
-
-  return progress;
+  const { completedQuests } = useQuests();
+  const completed = new Set(completedQuests.map((quest) => quest.questId));
+  return {
+    credentials: Object.entries(credentialMissions)
+      .filter(([mission]) => completed.has(mission))
+      .map(([, credential]) => credential),
+    skills: {
+      resumeCraft: completed.has("craft_resume") ? 2 : 0,
+      interviewing: completed.has("practice_interview") ? 2 : 0,
+      storytelling: completed.has("craft_cover_letter") ? 2 : 0,
+      networking: completed.has("meet_sam") ? 1 : 0,
+    },
+    chapterComplete: completed.has("chapter_one_complete"),
+  };
 }
 
 export function CareerProgressTracker() {
   useEffect(() => {
+    const people = new Set<string>();
+    const places = new Set<string>(["town_square"]);
     const unsubs = [
-      GameBridge.on("npcInteracted", (data) => {
-        const npcId = (data as { npcId?: string })?.npcId;
-        if (!npcId) return;
-        updateCareerProgress((current) => ({
-          ...current,
-          discoveredNpcs: addUnique(current.discoveredNpcs, npcId),
-          skills: {
-            ...current.skills,
-            networking: Math.min(3, current.skills.networking + 1),
-          },
-        }));
-      }),
-      GameBridge.on("locationChanged", (data) => {
-        const locationId =
-          typeof data === "string"
-            ? data
-            : (data as { locationId?: string })?.locationId;
-        if (!locationId) return;
-        updateCareerProgress((current) => ({
-          ...current,
-          visitedLocations: addUnique(current.visitedLocations, locationId),
-        }));
-      }),
-      GameBridge.on("xpGained", (data) => {
-        const reason = (data as { reason?: string })?.reason;
-        if (reason === "resume_tailored") {
-          updateCareerProgress((current) => ({
-            ...current,
-            credentials: addUnique(current.credentials, CREDENTIALS.resume),
-            skills: { ...current.skills, resumeCraft: 2 },
-          }));
+      GameBridge.on("npcInteracted", ({ npcId }) => {
+        people.add(npcId);
+        if (npcId === "sam_sage") {
+          GameBridge.emit("missionCompleted", { missionId: "meet_sam" });
         }
-        if (reason === "cover_letter_generated") {
-          updateCareerProgress((current) => ({
-            ...current,
-            credentials: addUnique(
-              current.credentials,
-              CREDENTIALS.coverLetter,
-            ),
-            skills: { ...current.skills, storytelling: 2 },
-          }));
+        if (people.size >= 6) {
+          GameBridge.emit("missionCompleted", { missionId: "meet_everyone" });
         }
-        if (reason === "interview_answer") {
-          updateCareerProgress((current) => ({
-            ...current,
-            credentials: addUnique(current.credentials, CREDENTIALS.interview),
-            skills: {
-              ...current.skills,
-              interviewing: Math.min(3, current.skills.interviewing + 1),
-            },
-          }));
+      }),
+      GameBridge.on("interiorEntered", ({ locationId }) => {
+        places.add(locationId);
+        if (locationId === "resume_tailor") {
+          GameBridge.emit("missionCompleted", {
+            missionId: "visit_resume_tailor",
+          });
+        }
+        if (locationId === "item_shop") {
+          GameBridge.emit("missionCompleted", { missionId: "visit_item_shop" });
+        }
+        if (places.size >= 5) {
+          GameBridge.emit("missionCompleted", {
+            missionId: "explore_every_building",
+          });
         }
       }),
     ];
@@ -147,6 +68,5 @@ export function CareerProgressTracker() {
       for (const unsub of unsubs) unsub();
     };
   }, []);
-
   return null;
 }

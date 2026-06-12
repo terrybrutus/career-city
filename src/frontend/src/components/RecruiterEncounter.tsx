@@ -1,10 +1,8 @@
 import { GameBridge } from "@/game/GameBridge";
-import {
-  CREDENTIALS,
-  updateCareerProgress,
-  useCareerProgress,
-} from "@/game/careerProgress";
+import { CREDENTIALS, useCareerProgress } from "@/game/careerProgress";
+import { useModalFocus } from "@/hooks/useModalFocus";
 import { useState } from "react";
+import { useRef } from "react";
 
 const QUESTIONS = [
   {
@@ -37,6 +35,8 @@ export default function RecruiterEncounter({
   onClose,
 }: { onClose: () => void }) {
   const progress = useCareerProgress();
+  const modalRef = useRef<HTMLElement>(null);
+  useModalFocus(modalRef, onClose);
   const [round, setRound] = useState(0);
   const [score, setScore] = useState(0);
   const [feedback, setFeedback] = useState("");
@@ -56,16 +56,8 @@ export default function RecruiterEncounter({
     if (round === QUESTIONS.length - 1) {
       setFinished(true);
       if (nextScore >= 2 && !progress.chapterComplete) {
-        updateCareerProgress((current) => ({
-          ...current,
-          chapterComplete: true,
-          credentials: current.credentials.includes(CREDENTIALS.chapter)
-            ? current.credentials
-            : [...current.credentials, CREDENTIALS.chapter],
-        }));
-        GameBridge.emit("xpGained", {
-          amount: 200,
-          reason: "chapter_complete",
+        GameBridge.emit("missionCompleted", {
+          missionId: "chapter_one_complete",
         });
       }
     } else {
@@ -85,9 +77,13 @@ export default function RecruiterEncounter({
 
   return (
     <div className="game-modal-backdrop" data-ocid="recruiter_encounter.dialog">
-      <section className="game-modal encounter-panel">
+      <section
+        ref={modalRef}
+        className="game-modal encounter-panel"
+        aria-label="Recruiter encounter"
+      >
         <button className="modal-close" type="button" onClick={onClose}>
-          [ESC]
+          Close
         </button>
         <p className="eyebrow">CHAPTER 1 FINALE</p>
         <h1>THE RECRUITER ENCOUNTER</h1>

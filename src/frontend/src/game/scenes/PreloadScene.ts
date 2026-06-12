@@ -1,4 +1,3 @@
-import { ASSETS, ASSET_KEYS } from "@/data/assets";
 import { GameBridge } from "@/game/GameBridge";
 import Phaser from "phaser";
 

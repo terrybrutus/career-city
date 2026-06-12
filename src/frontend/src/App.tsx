@@ -10,9 +10,7 @@ import {
 import { Suspense, lazy } from "react";
 
 const GamePage = lazy(() => import("@/pages/GamePage"));
-const ResumePage = lazy(() => import("@/pages/ResumePage"));
-const CoverLetterPage = lazy(() => import("@/pages/CoverLetterPage"));
-const InterviewPage = lazy(() => import("@/pages/InterviewPage"));
+const SharedArtifactPage = lazy(() => import("@/pages/SharedArtifactPage"));
 
 const rootRoute = createRootRoute({
   component: () => (
@@ -38,28 +36,21 @@ const gameRoute = createRoute({
   path: "/",
   component: GamePage,
 });
-const resumeRoute = createRoute({
+const sharedResumeRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: "/resume",
-  component: ResumePage,
+  path: "/share/resume/$token",
+  component: () => <SharedArtifactPage type="resume" />,
 });
-const coverLetterRoute = createRoute({
+const sharedCoverLetterRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: "/coverletter",
-  component: CoverLetterPage,
+  path: "/share/cover-letter/$token",
+  component: () => <SharedArtifactPage type="cover-letter" />,
 });
-const interviewRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/interview",
-  component: InterviewPage,
-});
-
 const router = createRouter({
   routeTree: rootRoute.addChildren([
     gameRoute,
-    resumeRoute,
-    coverLetterRoute,
-    interviewRoute,
+    sharedResumeRoute,
+    sharedCoverLetterRoute,
   ]),
 });
 
