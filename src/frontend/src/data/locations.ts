@@ -3,7 +3,7 @@ import type { GameLocation } from "@/types/game";
 export const LOCATIONS: GameLocation[] = [
   {
     id: "home",
-    name: "YOUR HOME",
+    name: "HOME",
     description: "Where every Career City journey begins",
     color: "#FFBF00",
     buildingColor: "#39FF14",

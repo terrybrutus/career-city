@@ -511,6 +511,185 @@ canvas {
   line-height: 1.4;
 }
 
+.workbench-shell {
+  position: fixed;
+  inset: 0;
+  z-index: 6000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: max(10px, env(safe-area-inset-top))
+    max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom))
+    max(10px, env(safe-area-inset-left));
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.72));
+}
+
+.workbench-panel {
+  --accent: #39ff14;
+  position: relative;
+  width: min(980px, 100%);
+  max-height: min(78dvh, 680px);
+  overflow: auto;
+  box-sizing: border-box;
+  padding: clamp(18px, 3vw, 30px);
+  color: #f4f0ff;
+  background: radial-gradient(
+      circle at top left,
+      color-mix(in srgb, var(--accent) 16%, transparent),
+      transparent 34%
+    ), rgba(5, 5, 18, 0.97);
+  border: 3px solid var(--accent);
+  box-shadow: 0 0 30px color-mix(in srgb, var(--accent) 28%, transparent);
+  font-family: var(--font-body);
+}
+
+.workbench-panel h1 {
+  margin: 0 0 8px;
+  padding-right: 72px;
+  color: var(--accent);
+  font-size: clamp(22px, 4vw, 34px);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.workbench-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  min-width: 58px;
+  min-height: 40px;
+  border: 2px solid color-mix(in srgb, var(--accent) 64%, #777799);
+  color: #f4f0ff;
+  background: rgba(0, 0, 0, 0.28);
+  cursor: pointer;
+}
+
+.backpack-context {
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 170, 0, 0.75);
+  background: rgba(255, 170, 0, 0.08);
+  color: #f4ead0;
+  line-height: 1.45;
+}
+
+.workbench-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.workbench-field {
+  display: grid;
+  gap: 6px;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.workbench-field:has(textarea),
+.workbench-grid > button,
+.workbench-card,
+.workbench-result,
+.workbench-error {
+  grid-column: 1 / -1;
+}
+
+.workbench-field input,
+.workbench-field textarea,
+.workbench-field select {
+  width: 100%;
+  min-height: 46px;
+  box-sizing: border-box;
+  border: 2px solid color-mix(in srgb, var(--accent) 72%, #2d2440);
+  background: rgba(0, 0, 0, 0.32);
+  color: #f4f0ff;
+  padding: 10px 12px;
+  font: 500 15px var(--font-body);
+}
+
+.workbench-field textarea {
+  min-height: 118px;
+  resize: vertical;
+  line-height: 1.45;
+}
+
+.workbench-grid > button,
+.shop-card {
+  min-height: 50px;
+  border: 0;
+  background: var(--accent);
+  color: #02020a;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.workbench-grid > button:disabled,
+.shop-card:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.workbench-card,
+.workbench-result {
+  padding: 14px;
+  border: 1px solid color-mix(in srgb, var(--accent) 58%, transparent);
+  background: rgba(255, 255, 255, 0.04);
+  color: #f4f0ff;
+  line-height: 1.55;
+}
+
+.workbench-error {
+  margin: 12px 0 0;
+  color: #ff7b7b;
+  font-weight: 700;
+}
+
+.workbench-result {
+  margin-top: 16px;
+  max-height: 260px;
+  overflow: auto;
+}
+
+.shop-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 12px;
+}
+
+.shop-card {
+  display: grid;
+  gap: 8px;
+  min-height: 150px;
+  padding: 14px;
+  border: 2px solid color-mix(in srgb, var(--accent) 72%, #2d2440);
+  background: rgba(136, 68, 255, 0.11);
+  color: #f4f0ff;
+  text-align: left;
+  text-transform: none;
+}
+
+.shop-card strong {
+  color: var(--accent);
+  font-size: 16px;
+  text-transform: uppercase;
+}
+
+.shop-card span {
+  color: #d8d4e8;
+  line-height: 1.45;
+}
+
+.shop-card em {
+  align-self: end;
+  color: #ffaa00;
+  font-style: normal;
+}
+
 .game-modal-backdrop {
   position: fixed;
   inset: 0;
@@ -735,6 +914,18 @@ canvas {
 
   .game-modal h1 {
     padding-right: 56px;
+  }
+
+  .workbench-shell {
+    align-items: stretch;
+  }
+
+  .workbench-panel {
+    max-height: calc(100dvh - 20px);
+  }
+
+  .workbench-grid {
+    grid-template-columns: 1fr;
   }
 }
 

@@ -44,15 +44,7 @@ export const NPCS: CareerNPC[] = [
     dialogue: [
       {
         speaker: "VERA",
-        text: "We will turn your experience into a targeted, saved resume artifact.",
-        options: [
-          {
-            label: "OPEN RESUME WORKSHOP",
-            action: "open_tool",
-            payload: "resume-tailor",
-          },
-          { label: "NOT YET", action: "close" },
-        ],
+        text: "Come inside the Resume Tailor when you are ready. I will help turn your real experience into a saved resume artifact.",
       },
       {
         speaker: "VERA",
@@ -75,11 +67,7 @@ export const NPCS: CareerNPC[] = [
     dialogue: [
       {
         speaker: "FELIX",
-        text: "I can see Vera's resume in your Backpack. Choose a preparation tool that supports the story you want Chad and Ed to remember.",
-        options: [
-          { label: "BUILD LOADOUT", action: "open_tool", payload: "item-shop" },
-          { label: "NOT YET", action: "close" },
-        ],
+        text: "Come inside the shop after Vera helps with your resume. We will pick one preparation tool that supports the story you want Ed to remember.",
       },
     ],
   },
@@ -98,15 +86,7 @@ export const NPCS: CareerNPC[] = [
     dialogue: [
       {
         speaker: "CHAD",
-        text: "Your Backpack gives us the evidence Vera helped you shape. We will turn one achievement into a practiced STAR story and save the coaching note.",
-        options: [
-          {
-            label: "START PRACTICE",
-            action: "open_tool",
-            payload: "interview-coach",
-          },
-          { label: "NOT YET", action: "close" },
-        ],
+        text: "Meet me inside when your Backpack has resume evidence. We will turn one achievement into a practiced STAR story and save the coaching note.",
       },
     ],
   },
@@ -125,15 +105,7 @@ export const NPCS: CareerNPC[] = [
     dialogue: [
       {
         speaker: "PENNY",
-        text: "I can build from the latest resume in your Backpack, then return a saved, role-specific cover letter for Ed.",
-        options: [
-          {
-            label: "OPEN WRITING DESK",
-            action: "open_tool",
-            payload: "cover-letter",
-          },
-          { label: "NOT YET", action: "close" },
-        ],
+        text: "Come inside the Writing Parlor after Vera saves your resume. I will build from what is already in your Backpack instead of making you retype it.",
       },
     ],
   },

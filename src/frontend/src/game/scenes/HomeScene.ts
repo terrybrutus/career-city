@@ -1,3 +1,9 @@
+import {
+  type Facing,
+  LIMEZU,
+  createCharacterSprite,
+  setCharacterMotion,
+} from "@/game/CareerAssets";
 import { GameBridge } from "@/game/GameBridge";
 import { collectBackpack, hasBackpack } from "@/game/playerState";
 import { BaseScene } from "@/game/scenes/BaseScene";
@@ -13,70 +19,71 @@ type HomeObject = {
   label: string;
   x: number;
   y: number;
+  radius: number;
   message: string;
-  accent: number;
 };
 
 const OBJECTS: HomeObject[] = [
   {
     id: "backpack",
     label: "Backpack",
-    x: 650,
-    y: 190,
+    x: 618,
+    y: 350,
+    radius: 58,
     message:
-      "Your Backpack carries preparation tools and every artifact you create between workshops.",
-    accent: 0xffbf00,
+      "Backpack equipped. It will carry your resume, cover letter, interview notes, and career tools from room to room.",
   },
   {
     id: "desk",
     label: "Planning Desk",
-    x: 170,
-    y: 180,
+    x: 208,
+    y: 190,
+    radius: 64,
     message:
-      "A note reads: Start with the opportunity, then gather evidence before you apply.",
-    accent: 0x00ffff,
+      "Your desk has a sticky note: pick a real role, gather evidence, then let each mentor improve one part of the application.",
   },
   {
     id: "calendar",
     label: "Calendar",
-    x: 390,
-    y: 105,
+    x: 425,
+    y: 116,
+    radius: 52,
     message:
-      "Today: meet the mentors. Tomorrow: turn preparation into an application.",
-    accent: 0xff00ff,
+      "Today's route: pack your Backpack, meet Sam, tailor a resume, build a loadout, practice with Chad, then check in with Ed.",
   },
   {
     id: "radio",
     label: "Radio",
-    x: 260,
-    y: 390,
+    x: 196,
+    y: 395,
+    radius: 54,
     message:
-      "The Career City morning show reminds listeners that progress is built one useful step at a time.",
-    accent: 0x39ff14,
+      "The morning show is debating whether bullet points should have plot arcs. Sam calls in and says yes.",
   },
   {
     id: "plant",
     label: "Desk Plant",
-    x: 100,
-    y: 390,
-    message: "New growth takes time. So does a strong career story.",
-    accent: 0x39ff14,
+    x: 96,
+    y: 404,
+    radius: 48,
+    message:
+      "Healthy growth: water, light, patience, and fewer vague resume bullets.",
   },
 ];
 
 export class HomeScene extends BaseScene {
   private player!: Phaser.GameObjects.Container;
-  private body!: Phaser.GameObjects.Graphics;
+  private sprite!: Phaser.GameObjects.Sprite;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private wasd!: Record<
     "up" | "down" | "left" | "right",
     Phaser.Input.Keyboard.Key
   >;
-  private facing: "up" | "down" | "left" | "right" = "up";
+  private facing: Facing = "down";
   private nearby: HomeObject | "exit" | null = null;
   private prompt!: Phaser.GameObjects.Text;
   private locked = false;
-  private backpackDisplay!: Phaser.GameObjects.Container;
+  private backpackSprite: Phaser.GameObjects.Container | null = null;
   private joystickActive = false;
   private joystickOrigin = { x: 0, y: 0 };
   private joystickVec = { x: 0, y: 0 };
@@ -134,142 +141,78 @@ export class HomeScene extends BaseScene {
   private drawRoom(): void {
     this.cameras.main.setBackgroundColor(0x171326);
     const g = this.add.graphics();
-    g.fillStyle(0x241d35, 1);
-    g.fillRect(32, 32, W - 64, H - 64);
-    g.fillStyle(0x503b62, 1);
-    g.fillRect(32, 32, W - 64, 82);
-    g.lineStyle(5, 0xffbf00, 0.55);
-    g.strokeRect(32, 32, W - 64, H - 64);
-    for (let y = 120; y < H - 32; y += 32) {
-      g.lineStyle(1, 0x7a6483, 0.18);
-      g.lineBetween(32, y, W - 32, y);
-    }
-    for (let x = 32; x < W - 32; x += 32) {
-      g.lineStyle(1, 0x7a6483, 0.12);
-      g.lineBetween(x, 114, x, H - 32);
-    }
-    g.fillStyle(0x09090f, 1);
-    g.fillRect(360, 520, 80, 48);
-    g.lineStyle(3, 0x39ff14, 0.8);
-    g.strokeRect(360, 520, 80, 48);
+    g.fillStyle(0x272336, 1);
+    g.fillRect(48, 48, W - 96, H - 96);
+    g.fillStyle(0x494056, 1);
+    g.fillRect(48, 48, W - 96, 84);
+    g.lineStyle(4, 0x8f7a5a, 0.9);
+    g.strokeRect(48, 48, W - 96, H - 96);
+    g.lineStyle(1, 0x786b81, 0.22);
+    for (let y = 144; y < H - 48; y += 32) g.lineBetween(48, y, W - 48, y);
+    for (let x = 48; x < W - 48; x += 32) g.lineBetween(x, 132, x, H - 48);
+
+    g.fillStyle(0x191521, 1);
+    g.fillRect(354, 520, 92, 36);
+    g.lineStyle(3, 0x39ff14, 0.85);
+    g.strokeRect(354, 520, 92, 36);
     this.add
-      .text(400, 508, "TO CAREER CITY", {
+      .text(400, 514, "CAREER CITY", {
         fontFamily: '"Space Grotesk", monospace',
         fontSize: "12px",
         color: "#39ff14",
       })
       .setOrigin(0.5, 1);
+
     this.add
-      .text(60, 55, "YOUR ROOM", {
+      .text(72, 72, "HOME", {
         fontFamily: '"Space Grotesk", monospace',
         fontSize: "20px",
         color: "#ffbf00",
         fontStyle: "bold",
       })
-      .setDepth(3);
+      .setDepth(5);
   }
 
   private drawObjects(): void {
-    const g = this.add.graphics();
-    g.fillStyle(0x5b3b26, 1);
-    g.fillRect(105, 130, 130, 70);
-    g.fillStyle(0x26334c, 1);
-    g.fillRect(125, 142, 82, 42);
-    g.fillStyle(0xd9e7ff, 1);
-    g.fillRect(145, 150, 42, 25);
-    g.fillStyle(0x30233d, 1);
-    g.fillRect(590, 115, 120, 110);
-    g.lineStyle(3, 0xffbf00, 0.7);
-    g.strokeRect(590, 115, 120, 110);
-    g.fillStyle(0x8c5b2e, 1);
-    g.fillRect(620, 155, 52, 60);
-    g.fillStyle(0xffbf00, 1);
-    g.fillRect(625, 162, 42, 40);
-    g.fillStyle(0x63368a, 1);
-    g.fillRect(345, 62, 90, 64);
-    g.fillStyle(0xffffff, 0.9);
-    g.fillRect(355, 76, 70, 40);
-    g.fillStyle(0x222222, 1);
-    g.fillRect(225, 360, 70, 52);
-    g.fillStyle(0x39ff14, 1);
-    g.fillCircle(245, 385, 8);
-    g.fillCircle(275, 385, 8);
-    g.fillStyle(0x774422, 1);
-    g.fillRect(80, 400, 40, 24);
-    g.fillStyle(0x39aa44, 1);
-    g.fillCircle(100, 380, 22);
-    for (const object of OBJECTS) {
-      this.add
-        .text(object.x, object.y + 46, object.label.toUpperCase(), {
-          fontFamily: '"Space Grotesk", monospace',
-          fontSize: "10px",
-          color: `#${object.accent.toString(16).padStart(6, "0")}`,
-          backgroundColor: "#09090fcc",
-          padding: { x: 5, y: 3 },
-        })
-        .setOrigin(0.5);
-    }
-    this.backpackDisplay = this.add.container(650, 190).setDepth(4);
+    this.add.image(198, 211, LIMEZU.officeDesk).setScale(2.4).setDepth(2);
+    this.add.image(206, 155, LIMEZU.officeScreen).setScale(2.25).setDepth(3);
+    this.add.image(96, 405, LIMEZU.officePlant).setScale(2.25).setDepth(3);
+    this.add.image(190, 401, LIMEZU.officeScreen).setScale(1.6).setDepth(3);
+    this.add.image(420, 120, LIMEZU.officeClock).setScale(2.15).setDepth(3);
+
+    const bed = this.add.graphics();
+    bed.setDepth(2);
+    bed.fillStyle(0x8a6a4a, 1);
+    bed.fillRoundedRect(544, 126, 142, 82, 8);
+    bed.fillStyle(0xc8d6f0, 1);
+    bed.fillRoundedRect(556, 136, 118, 60, 6);
+    bed.fillStyle(0x6f82b5, 1);
+    bed.fillRoundedRect(556, 168, 118, 28, 4);
+
+    this.backpackSprite = this.add.container(618, 350).setDepth(4);
     this.updateBackpackDisplay();
   }
 
   private updateBackpackDisplay(): void {
-    this.backpackDisplay.removeAll(true);
-    if (hasBackpack()) {
-      const text = this.add
-        .text(0, 0, "BACKPACK COLLECTED", {
-          fontFamily: '"Space Grotesk", monospace',
-          fontSize: "10px",
-          color: "#39ff14",
-          backgroundColor: "#09090f",
-          padding: { x: 6, y: 4 },
-        })
-        .setOrigin(0.5);
-      this.backpackDisplay.add(text);
-      return;
-    }
+    if (!this.backpackSprite) return;
+    this.backpackSprite.removeAll(true);
+    if (hasBackpack()) return;
     const bag = this.add.graphics();
     bag.fillStyle(0x8c5b2e, 1);
-    bag.fillRoundedRect(-16, -20, 32, 40, 6);
-    bag.lineStyle(3, 0xffbf00, 1);
-    bag.strokeRoundedRect(-16, -20, 32, 40, 6);
-    bag.lineBetween(-10, -20, -7, -29);
-    bag.lineBetween(10, -20, 7, -29);
-    this.backpackDisplay.add(bag);
+    bag.fillRoundedRect(-13, -17, 26, 34, 5);
+    bag.fillStyle(0xbe823b, 1);
+    bag.fillRoundedRect(-8, -7, 16, 14, 3);
+    bag.lineStyle(2, 0x3d2718, 1);
+    bag.strokeRoundedRect(-13, -17, 26, 34, 5);
+    bag.lineBetween(-8, -17, -5, -24);
+    bag.lineBetween(8, -17, 5, -24);
+    this.backpackSprite.add(bag);
   }
 
   private createPlayer(): void {
-    this.player = this.add.container(400, 450).setDepth(10);
-    this.body = this.add.graphics();
-    this.player.add(this.body);
-    this.drawPlayer();
-  }
-
-  private drawPlayer(): void {
-    const g = this.body;
-    g.clear();
-    g.fillStyle(0x000000, 0.3);
-    g.fillEllipse(0, 13, 20, 6);
-    if (hasBackpack()) {
-      g.fillStyle(0x8c5b2e, 1);
-      g.fillRoundedRect(-9, -7, 18, 18, 3);
-      g.lineStyle(2, 0xffbf00, 1);
-      g.strokeRoundedRect(-9, -7, 18, 18, 3);
-    }
-    g.fillStyle(0x226622, 1);
-    g.fillRect(-6, -6, 12, 11);
-    g.fillStyle(0xf5c5a0, 1);
-    g.fillRect(-5, -16, 10, 10);
-    g.fillStyle(0x5a3a10, 1);
-    g.fillRect(-5, -18, 10, 4);
-    if (this.facing !== "up") {
-      g.fillStyle(0x000000, 1);
-      g.fillRect(-3, -13, 2, 2);
-      g.fillRect(1, -13, 2, 2);
-    }
-    g.fillStyle(0x1a1a5a, 1);
-    g.fillRect(-5, 5, 4, 7);
-    g.fillRect(1, 5, 4, 7);
+    this.player = this.add.container(400, 440).setDepth(10);
+    this.sprite = createCharacterSprite(this, "alex", this.facing);
+    this.player.add(this.sprite);
   }
 
   private setupInput(): void {
@@ -305,6 +248,12 @@ export class HomeScene extends BaseScene {
       .setDepth(8100)
       .setInteractive();
     button.on("pointerdown", () => this.interact());
+    const positionButton = () =>
+      button.setPosition(this.scale.width - 76, this.scale.height - 82);
+    this.scale.on("resize", positionButton);
+    this.events.once("shutdown", () =>
+      this.scale.off("resize", positionButton),
+    );
     this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
       if (pointer.x > this.scale.width / 2) return;
       this.joystickActive = true;
@@ -342,36 +291,36 @@ export class HomeScene extends BaseScene {
     }
     if (Math.abs(dx) > Math.abs(dy)) this.facing = dx > 0 ? "right" : "left";
     else if (dy) this.facing = dy > 0 ? "down" : "up";
-    this.player.x = this.clamp(this.player.x + dx, 55, W - 55);
-    this.player.y = this.clamp(this.player.y + dy, 135, H - 45);
+    this.player.x = this.clamp(this.player.x + dx, 72, W - 72);
+    this.player.y = this.clamp(this.player.y + dy, 150, H - 52);
+    setCharacterMotion(this.sprite, "alex", this.facing, Boolean(dx || dy));
     if (dx || dy) {
-      this.drawPlayer();
       GameBridge.emit("playerMoved", { x: this.player.x, y: this.player.y });
     }
   }
 
   private findNearby(): void {
     let closest: HomeObject | null = null;
-    let distance = 72;
+    let distance = Number.POSITIVE_INFINITY;
     for (const object of OBJECTS) {
       const d = Math.hypot(this.player.x - object.x, this.player.y - object.y);
-      if (d < distance) {
+      if (d < object.radius && d < distance) {
         closest = object;
         distance = d;
       }
     }
-    const atExit = Math.hypot(this.player.x - 400, this.player.y - 545) < 62;
+    const atExit = Math.hypot(this.player.x - 400, this.player.y - 538) < 56;
     this.nearby = atExit ? "exit" : closest;
     if (!this.nearby) {
       this.prompt.setVisible(false);
       return;
     }
-    const action = this.isTouchDevice ? "Tap INTERACT" : "E / Enter / Space";
+    const action = this.isTouchDevice ? "Tap Interact" : "E / Enter / Space";
     this.prompt
       .setText(
         this.nearby === "exit"
-          ? `${action} - Leave home`
-          : `${action} - Inspect ${this.nearby.label}`,
+          ? `${action}: leave home`
+          : `${action}: ${this.nearby.label}`,
       )
       .setVisible(true);
   }
@@ -397,7 +346,7 @@ export class HomeScene extends BaseScene {
       if (!hasBackpack()) {
         this.openObjectDialogue(
           "FRONT DOOR",
-          "You feel like you are forgetting something important. Find your Backpack before leaving.",
+          "Your Backpack is still by the bed. Grab it before heading into Career City.",
         );
         return;
       }
@@ -410,14 +359,10 @@ export class HomeScene extends BaseScene {
     if (this.nearby.id === "backpack" && !hasBackpack()) {
       collectBackpack();
       this.updateBackpackDisplay();
-      this.drawPlayer();
       GameBridge.emit("missionCompleted", {
         missionId: "pack_for_the_journey",
       });
-      this.openObjectDialogue(
-        "BACKPACK",
-        "Backpack equipped. Your saved resumes, cover letters, coaching notes, and preparation tools will travel with you.",
-      );
+      this.openObjectDialogue("BACKPACK", this.nearby.message);
       return;
     }
     this.openObjectDialogue(

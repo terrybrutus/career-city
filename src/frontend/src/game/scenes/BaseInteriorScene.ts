@@ -718,7 +718,9 @@ export abstract class BaseInteriorScene extends BaseScene {
       "interview-coach": "Talk to Chad",
       "item-shop": "Talk to Felix",
     };
-    const action = this.isTouchDevice ? "Tap INTERACT" : "Press E or Enter";
+    const action = this.isTouchDevice
+      ? "Tap INTERACT"
+      : "Press E, Enter, or Space";
     const label = `${action} - ${toolLabels[this.getToolId()] ?? "Interact"}`;
 
     const { x, y } = this.npcEntry;

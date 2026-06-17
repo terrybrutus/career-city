@@ -1,6 +1,8 @@
 import { createActor } from "@/backend";
 import { QuestStatus } from "@/backend";
 import { GameBridge } from "@/game/GameBridge";
+import { markLocalMissionCompleted } from "@/game/localMissionProgress";
+import type { MissionId } from "@/game/missions";
 import { useActor } from "@caffeineai/core-infrastructure";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
@@ -12,8 +14,10 @@ export function useProgressionSync() {
 
   useEffect(() => {
     const complete = async (missionId: string) => {
+      markLocalMissionCompleted(missionId as MissionId);
       if (!actor) {
         pending.current.add(missionId);
+        GameBridge.emit("questUpdated", { questId: missionId });
         return;
       }
       await actor.upsertQuestProgress(missionId, QuestStatus.completed, 0n);

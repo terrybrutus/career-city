@@ -20,7 +20,7 @@ import ItemApi "mixins/item-api";
 
 
 
-persistent actor {
+actor {
   let profiles : Map.Map<CommonTypes.UserId, ProfileTypes.UserProfile> = Map.empty();
   let resumes : Map.Map<CommonTypes.UserId, List.List<ResumeTypes.Resume>> = Map.empty();
   let resumesByToken : Map.Map<CommonTypes.ShareToken, ResumeTypes.Resume> = Map.empty();

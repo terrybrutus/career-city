@@ -1,10 +1,10 @@
+import {
+  createCareerAnimations,
+  preloadCareerAssets,
+} from "@/game/CareerAssets";
 import { GameBridge } from "@/game/GameBridge";
 import Phaser from "phaser";
 
-/**
- * PreloadScene — loads game assets with a Zelda/Pokemon-style loading screen.
- * Falls back gracefully if any asset URL fails (procedural rendering takes over).
- */
 export class PreloadScene extends Phaser.Scene {
   private progressBar!: Phaser.GameObjects.Graphics;
   private progressBox!: Phaser.GameObjects.Graphics;
@@ -22,18 +22,20 @@ export class PreloadScene extends Phaser.Scene {
     const cy = height / 2;
 
     this.createLoadingUI(cx, cy);
-
-    // All assets are procedural — no external URLs to load.
-    // Immediately fire progress to 100% so loading screen completes.
-    this.percentText.setText("100%");
-    this.progressBar.clear();
-    this.progressBar.fillStyle(0xffbf00, 1);
-    this.progressBar.fillRect(cx - 156, cy + 20, 308, 24);
-    this.assetText.setText("Procedural rendering ready");
+    preloadCareerAssets(this);
+    this.load.on("progress", (value: number) => {
+      this.percentText.setText(`${Math.round(value * 100)}%`);
+      this.progressBar.clear();
+      this.progressBar.fillStyle(0xffbf00, 1);
+      this.progressBar.fillRect(cx - 156, cy + 20, 308 * value, 24);
+    });
+    this.load.on("fileprogress", (file: { key: string }) => {
+      this.assetText.setText(`Loading ${file.key}`);
+    });
   }
 
   create(): void {
-    this.createPlayerAnimations();
+    createCareerAnimations(this);
     GameBridge.emit("assetsLoaded");
     this.scene.start("HomeScene");
   }
@@ -41,7 +43,6 @@ export class PreloadScene extends Phaser.Scene {
   private createLoadingUI(cx: number, cy: number): void {
     this.cameras.main.setBackgroundColor(0x0a0a0f);
 
-    // Title
     this.add
       .text(cx, cy - 100, "CAREER CITY", {
         fontSize: "32px",
@@ -69,7 +70,6 @@ export class PreloadScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    // Loading label
     this.loadingText = this.add
       .text(cx, cy - 10, "LOADING ASSETS...", {
         fontSize: "13px",
@@ -79,13 +79,11 @@ export class PreloadScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    // Progress box (amber border)
     this.progressBox = this.add.graphics();
     this.progressBox.fillStyle(0x0a0a0a, 0.95);
     this.progressBox.fillRect(cx - 160, cy + 16, 320, 32);
     this.progressBox.lineStyle(4, 0xffbf00, 1);
     this.progressBox.strokeRect(cx - 160, cy + 16, 320, 32);
-    // Pixel corners
     this.progressBox.fillStyle(0xffbf00, 1);
     for (const [fx, fy] of [
       [cx - 160, cy + 16],
@@ -113,10 +111,5 @@ export class PreloadScene extends Phaser.Scene {
         fontFamily: '"Space Grotesk", monospace',
       })
       .setOrigin(0.5);
-  }
-
-  private createPlayerAnimations(): void {
-    // No spritesheet animations — player is drawn procedurally each frame
-    // via drawPlayerCharacter(). No animation registration needed.
   }
 }

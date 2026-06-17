@@ -1,4 +1,5 @@
 import { NPCS } from "@/data/npcs";
+import { LIMEZU } from "@/game/CareerAssets";
 import { GameBridge } from "@/game/GameBridge";
 import { hasBackpack } from "@/game/playerState";
 import { BaseScene } from "@/game/scenes/BaseScene";
@@ -33,7 +34,7 @@ const ED_AREA_CENTERS = [
   { x: 650, y: 450 }, // near cover letter
   { x: 150, y: 450 }, // near item shop
   { x: 400, y: 150 }, // north path
-  { x: 400, y: 500 }, // south path
+  { x: 400, y: 340 }, // south of fountain, clear of home roof
 ];
 
 // Bench in the bottom-left corner of the town square box
@@ -44,11 +45,11 @@ const BENCH_Y = 314;
 const BUILDINGS: BuildingDef[] = [
   {
     id: "home",
-    label: "YOUR\nHOME",
-    x: 330,
-    y: 460,
-    w: 140,
-    h: 100,
+    label: "HOME",
+    x: 296,
+    y: 372,
+    w: 208,
+    h: 184,
     accentColor: 0x39ff14,
     accentHex: "#39ff14",
     route: "/",
@@ -479,6 +480,28 @@ export class TownScene extends BaseScene {
   }
 
   private drawBuilding(b: BuildingDef): void {
+    if (b.id === "home") {
+      const image = this.add
+        .image(b.x + b.w / 2, b.y + b.h, LIMEZU.townHome)
+        .setOrigin(0.5, 1)
+        .setScale(0.36)
+        .setDepth(3);
+      this.add
+        .text(b.x + b.w / 2, b.y - 10, b.label, {
+          fontSize: "17px",
+          color: b.accentHex,
+          fontFamily: '"Space Grotesk", monospace',
+          align: "center",
+          stroke: "#000000",
+          strokeThickness: 3,
+        })
+        .setOrigin(0.5, 1)
+        .setDepth(4);
+      const shadow = this.add.graphics().setDepth(2);
+      shadow.fillStyle(0x000000, 0.2);
+      shadow.fillEllipse(image.x, b.y + b.h - 4, b.w, 28);
+      return;
+    }
     const g = this.add.graphics();
     g.setDepth(3);
     const { x, y, w, h, accentColor } = b;
@@ -1487,7 +1510,7 @@ export class TownScene extends BaseScene {
         this.scale.height - 39,
         this.isTouchDevice
           ? `Tap INTERACT to talk to ${npc.name}`
-          : `Press E or Enter to talk to ${npc.name}`,
+          : `Press E, Enter, or Space to talk to ${npc.name}`,
         {
           fontSize: "14px",
           color: "#ffffff",

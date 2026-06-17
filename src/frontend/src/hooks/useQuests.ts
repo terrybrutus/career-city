@@ -1,6 +1,7 @@
 import { createActor } from "@/backend";
 import { QuestStatus as BackendQuestStatus } from "@/backend";
 import { GameBridge } from "@/game/GameBridge";
+import { listLocalCompletedMissions } from "@/game/localMissionProgress";
 import { MISSIONS, missionById } from "@/game/missions";
 import type { QuestProgress } from "@/types/game";
 import { useActor } from "@caffeineai/core-infrastructure";
@@ -22,28 +23,32 @@ export function useQuests() {
     queryKey: ["quests"],
     queryFn: async () => {
       if (!actor) {
+        const localCompleted = new Set(listLocalCompletedMissions());
         return MISSIONS.map((def) => ({
           questId: def.id,
           title: def.title,
           description: def.objective,
-          status: "available" as const,
+          status: localCompleted.has(def.id) ? "completed" : "available",
           xpReward: def.reward,
           locationId: "town_square",
         }));
       }
       const raw = await actor.listQuests();
+      const localCompleted = new Set(listLocalCompletedMissions());
       return MISSIONS.map((def) => {
         const rq = raw.find((item) => item.questId === def.id);
+        const completed =
+          rq?.status === BackendQuestStatus.completed ||
+          localCompleted.has(def.id);
         return {
           questId: def.id,
           title: def.title,
           description: def.objective,
-          status:
-            rq?.status === BackendQuestStatus.completed
-              ? ("completed" as const)
-              : rq?.status === BackendQuestStatus.inProgress
-                ? ("active" as const)
-                : ("available" as const),
+          status: completed
+            ? ("completed" as const)
+            : rq?.status === BackendQuestStatus.inProgress
+              ? ("active" as const)
+              : ("available" as const),
           xpReward: def.reward,
           locationId: "town_square",
         };

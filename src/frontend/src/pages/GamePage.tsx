@@ -1,10 +1,7 @@
 import CareerPassport from "@/components/CareerPassport";
-import CoverLetterOverlay from "@/components/CoverLetterOverlay";
-import InterviewCoachOverlay from "@/components/InterviewCoachOverlay";
-import ItemShopOverlay from "@/components/ItemShopOverlay";
+import CareerWorkbench from "@/components/CareerWorkbench";
 import JourneyGuide from "@/components/JourneyGuide";
 import RecruiterEncounter from "@/components/RecruiterEncounter";
-import ResumeTailorOverlay from "@/components/ResumeTailorOverlay";
 import { GameBridge } from "@/game/GameBridge";
 import { musicManager } from "@/game/MusicManager";
 import {
@@ -28,7 +25,19 @@ import { useCallback, useEffect, useRef, useState } from "react";
 // ─────────────────────────────────────────────────────
 // Unified control dock — one mutually exclusive panel at a time
 // ─────────────────────────────────────────────────────
-type HUDTab = "status" | "quests" | "music" | "howto" | null;
+type HUDTab = "status" | "quests" | "music" | "settings" | null;
+type WorkbenchTool =
+  | "resume-tailor"
+  | "cover-letter"
+  | "interview-coach"
+  | "item-shop";
+
+const WORKBENCH_TOOLS = new Set<string>([
+  "resume-tailor",
+  "cover-letter",
+  "interview-coach",
+  "item-shop",
+]);
 
 function UnifiedHUDPanel({
   onPassport,
@@ -162,7 +171,7 @@ function UnifiedHUDPanel({
           style={iconBtnStyle(activeTab === "quests")}
           onClick={() => toggleTab("quests")}
         >
-          📋
+          LOG
         </button>
         <button
           type="button"
@@ -172,17 +181,17 @@ function UnifiedHUDPanel({
           style={iconBtnStyle(activeTab === "music")}
           onClick={() => toggleTab("music")}
         >
-          🎵
+          AUD
         </button>
         <button
           type="button"
-          title="Controls"
-          aria-label="Toggle controls help"
-          data-ocid="hud.howto_tab"
-          style={iconBtnStyle(activeTab === "howto")}
-          onClick={() => toggleTab("howto")}
+          title="Settings"
+          aria-label="Toggle settings"
+          data-ocid="hud.settings_tab"
+          style={iconBtnStyle(activeTab === "settings")}
+          onClick={() => toggleTab("settings")}
         >
-          ❓
+          CFG
         </button>
       </div>
 
@@ -322,7 +331,7 @@ function UnifiedHUDPanel({
               </div>
             </div>
           )}
-          {activeTab === "howto" && (
+          {activeTab === "settings" && (
             <div style={{ color: dim, fontSize: 13 }}>
               <div
                 style={{
@@ -332,7 +341,7 @@ function UnifiedHUDPanel({
                   fontWeight: 700,
                 }}
               >
-                CONTROLS
+                SETTINGS AND CONTROLS
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
                 <div>
@@ -438,7 +447,7 @@ function UnifiedHUDPanel({
                 className="workshop-nav"
                 aria-label="Accessible workshop navigator"
               >
-                <PanelTitle>WORKSHOP NAVIGATOR</PanelTitle>
+                <PanelTitle>ACCESSIBLE WORKSHOP NAVIGATOR</PanelTitle>
                 <p>
                   Keyboard and touch alternative to walking through the canvas.
                 </p>
@@ -895,7 +904,7 @@ export default function GamePage() {
     if (!activeNPC) return;
     const onKey = (event: KeyboardEvent) => {
       if (
-        event.code !== "Space" ||
+        (event.code !== "Space" && event.code !== "Enter") ||
         event.target instanceof HTMLInputElement ||
         event.target instanceof HTMLTextAreaElement ||
         event.target instanceof HTMLSelectElement
@@ -1001,18 +1010,12 @@ export default function GamePage() {
         <LocationBanner text={showBanner.text} color={showBanner.color} />
       )}
 
-      {/* Career tool overlays */}
-      {activeTool === "resume-tailor" && (
-        <ResumeTailorOverlay onClose={() => setActiveTool(null)} />
-      )}
-      {activeTool === "cover-letter" && (
-        <CoverLetterOverlay onClose={() => setActiveTool(null)} />
-      )}
-      {activeTool === "interview-coach" && (
-        <InterviewCoachOverlay onClose={() => setActiveTool(null)} />
-      )}
-      {activeTool === "item-shop" && (
-        <ItemShopOverlay onClose={() => setActiveTool(null)} />
+      {/* Career workbench */}
+      {activeTool && WORKBENCH_TOOLS.has(activeTool) && (
+        <CareerWorkbench
+          tool={activeTool as WorkbenchTool}
+          onClose={() => setActiveTool(null)}
+        />
       )}
       {passportOpen && (
         <CareerPassport
