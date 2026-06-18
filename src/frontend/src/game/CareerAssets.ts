@@ -10,7 +10,10 @@ export const LIMEZU = {
   exteriorFloors: "cc-exteriors-floors",
   exteriorOffice: "cc-exteriors-office",
   townHome: "cc-town-home",
-  townOffice: "cc-town-office",
+  townResumeStore: "cc-town-resume-store",
+  townCoverParlor: "cc-town-cover-parlor",
+  townInterviewOffice: "cc-town-interview-office",
+  townItemMarket: "cc-town-item-market",
   officePlant: "cc-office-plant",
   officeChair: "cc-office-chair",
   officeScreen: "cc-office-screen",
@@ -60,8 +63,20 @@ export function preloadCareerAssets(scene: Phaser.Scene): void {
   );
   scene.load.image(LIMEZU.townHome, "/assets/career-city/limezu/town-home.png");
   scene.load.image(
-    LIMEZU.townOffice,
-    "/assets/career-city/limezu/town-office-tower.png",
+    LIMEZU.townResumeStore,
+    "/assets/career-city/limezu/town-resume-store.png",
+  );
+  scene.load.image(
+    LIMEZU.townCoverParlor,
+    "/assets/career-city/limezu/town-cover-parlor.png",
+  );
+  scene.load.image(
+    LIMEZU.townInterviewOffice,
+    "/assets/career-city/limezu/town-interview-office.png",
+  );
+  scene.load.image(
+    LIMEZU.townItemMarket,
+    "/assets/career-city/limezu/town-item-market.png",
   );
   scene.load.image(
     LIMEZU.officePlant,

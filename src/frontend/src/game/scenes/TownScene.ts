@@ -17,12 +17,14 @@ const TILE = 32;
 type BuildingDef = {
   id: string;
   label: string;
+  assetKey: string;
   x: number;
   y: number;
   w: number;
   h: number;
-  accentColor: number;
   accentHex: string;
+  displayW: number;
+  displayH: number;
   route: string;
 };
 
@@ -46,56 +48,66 @@ const BUILDINGS: BuildingDef[] = [
   {
     id: "home",
     label: "HOME",
+    assetKey: LIMEZU.townHome,
     x: 376,
     y: 364,
     w: 208,
     h: 144,
-    accentColor: 0x39ff14,
-    accentHex: "#39ff14",
+    accentHex: "#d8c7a0",
+    displayW: 160,
+    displayH: 126,
     route: "/",
   },
   {
     id: "resume_tailor",
     label: "RESUME\nTAILOR",
+    assetKey: LIMEZU.townResumeStore,
     x: 76,
-    y: 70,
+    y: 74,
     w: 170,
     h: 122,
-    accentColor: 0xff00ff,
-    accentHex: "#ff00ff",
+    accentHex: "#f2d38a",
+    displayW: 112,
+    displayH: 166,
     route: "/resume",
   },
   {
     id: "cover_letter_corner",
     label: "COVER\nLETTER",
+    assetKey: LIMEZU.townCoverParlor,
     x: 714,
-    y: 316,
+    y: 328,
     w: 170,
-    h: 122,
-    accentColor: 0x00ffff,
-    accentHex: "#00ffff",
+    h: 110,
+    accentHex: "#b6d6d9",
+    displayW: 142,
+    displayH: 154,
     route: "/coverletter",
   },
   {
     id: "interview_coach",
     label: "INTERVIEW\nCOACH",
+    assetKey: LIMEZU.townInterviewOffice,
     x: 714,
     y: 70,
     w: 170,
-    h: 122,
-    accentColor: 0xffaa00,
-    accentHex: "#ffaa00",
+    h: 126,
+    accentHex: "#c7d4e8",
+    displayW: 112,
+    displayH: 188,
     route: "/interview",
   },
   {
     id: "item_shop",
     label: "ITEM\nSHOP",
+    assetKey: LIMEZU.townItemMarket,
     x: 76,
-    y: 316,
+    y: 328,
     w: 170,
-    h: 122,
-    accentColor: 0x8844ff,
-    accentHex: "#8844ff",
+    h: 110,
+    accentHex: "#f4c66a",
+    displayW: 132,
+    displayH: 140,
     route: "/",
   },
 ];
@@ -114,7 +126,7 @@ const NPC_POSITIONS: NPCDef[] = [
   // Vera — female, Resume Tailor: shifted LEFT of door (building bottom y:160, door cx ~118)
   {
     npcId: "vera_hr",
-    x: 156,
+    x: 166,
     y: 212,
     gender: "female",
     primaryColor: 0x00aaaa,
@@ -123,7 +135,7 @@ const NPC_POSITIONS: NPCDef[] = [
   // Chad — male, Interview Coach: shifted RIGHT and DOWN (building bottom y:160, door cx ~678)
   {
     npcId: "chad_coach",
-    x: 802,
+    x: 846,
     y: 212,
     gender: "male",
     primaryColor: 0x3366cc,
@@ -132,7 +144,7 @@ const NPC_POSITIONS: NPCDef[] = [
   // Penny — female, Cover Letter Corner: shifted LEFT (building bottom y:480, door cx ~678)
   {
     npcId: "penny_writer",
-    x: 800,
+    x: 846,
     y: 466,
     gender: "female",
     primaryColor: 0xcc3366,
@@ -141,7 +153,7 @@ const NPC_POSITIONS: NPCDef[] = [
   // Felix — male, Item Shop: shifted RIGHT of door (building bottom y:480, door cx ~118)
   {
     npcId: "felix_shop",
-    x: 160,
+    x: 166,
     y: 466,
     gender: "male",
     primaryColor: 0x338844,
@@ -488,49 +500,50 @@ export class TownScene extends BaseScene {
   }
 
   private drawBuilding(b: BuildingDef): void {
-    if (b.id === "home") {
-      const image = this.add
-        .image(b.x + b.w / 2, b.y + b.h, LIMEZU.townHome)
-        .setOrigin(0.5, 1)
-        .setScale(0.27)
-        .setDepth(3);
-      this.add
-        .text(b.x + b.w / 2, b.y - 10, b.label, {
-          fontSize: "17px",
-          color: b.accentHex,
-          fontFamily: '"Space Grotesk", monospace',
-          align: "center",
-          stroke: "#000000",
-          strokeThickness: 3,
-        })
-        .setOrigin(0.5, 1)
-        .setDepth(4);
-      const shadow = this.add.graphics().setDepth(2);
-      shadow.fillStyle(0x000000, 0.2);
-      shadow.fillEllipse(image.x, b.y + b.h - 4, b.w, 28);
-      return;
-    }
     const building = this.add
-      .image(b.x + b.w / 2, b.y + b.h, LIMEZU.townOffice)
+      .image(b.x + b.w / 2, b.y + b.h, b.assetKey)
       .setOrigin(0.5, 1)
-      .setScale(0.2)
-      .setTint(b.accentColor)
       .setDepth(3);
+    building.setDisplaySize(b.displayW, b.displayH);
     const shadow = this.add.graphics().setDepth(2);
-    shadow.fillStyle(0x000000, 0.28);
-    shadow.fillEllipse(building.x, b.y + b.h - 4, b.w, 24);
-    this.add
-      .text(b.x + b.w / 2, b.y - 8, b.label, {
-        fontSize: "17px",
+    shadow.fillStyle(0x000000, 0.26);
+    shadow.fillEllipse(building.x, b.y + b.h - 4, b.displayW * 1.05, 24);
+    this.drawBuildingPlaque(b);
+  }
+
+  private drawBuildingPlaque(b: BuildingDef): void {
+    const label = b.label.replace("\n", " ");
+    const plaqueY = b.y - 13;
+    const text = this.add
+      .text(b.x + b.w / 2, plaqueY, label, {
+        fontSize: "10px",
         color: b.accentHex,
         fontFamily: '"Space Grotesk", monospace',
         align: "center",
-        stroke: "#000000",
-        strokeThickness: 3,
-        lineSpacing: 2,
+        letterSpacing: 1,
       })
-      .setOrigin(0.5, 1)
-      .setDepth(4);
+      .setOrigin(0.5, 0.5)
+      .setDepth(5);
+    const padX = 8;
+    const padY = 4;
+    const bg = this.add.graphics().setDepth(4);
+    bg.fillStyle(0x050510, 0.86);
+    bg.fillRoundedRect(
+      text.x - text.width / 2 - padX,
+      text.y - text.height / 2 - padY,
+      text.width + padX * 2,
+      text.height + padY * 2,
+      4,
+    );
+    const accent = Number.parseInt(b.accentHex.replace("#", ""), 16);
+    bg.lineStyle(1, Number.isNaN(accent) ? 0xffffff : accent, 0.75);
+    bg.strokeRoundedRect(
+      text.x - text.width / 2 - padX,
+      text.y - text.height / 2 - padY,
+      text.width + padX * 2,
+      text.height + padY * 2,
+      4,
+    );
   }
 
   // ─────────────────────────────────────────────
@@ -1471,7 +1484,8 @@ export class TownScene extends BaseScene {
       // Subtle darker strip just below the door (28px wide, 6px tall)
       g.fillStyle(0x000000, 0.3);
       g.fillRect(doorCX - 14, doorBottomY - 1, 28, 7);
-      g.lineStyle(1, b.accentColor, 0.4);
+      const accent = Number.parseInt(b.accentHex.replace("#", ""), 16);
+      g.lineStyle(1, Number.isNaN(accent) ? 0xffffff : accent, 0.4);
       g.strokeRect(doorCX - 14, doorBottomY - 1, 28, 7);
     }
   }

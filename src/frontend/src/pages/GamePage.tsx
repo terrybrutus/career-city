@@ -982,8 +982,7 @@ export default function GamePage() {
       )}
       <CareerProgressTracker />
       <output className="portrait-note">
-        Portrait mode is supported. Rotate to landscape for a wider view of
-        Career City.
+        Portrait works. Landscape gives a wider view.
       </output>
 
       {/* CRT scanline overlay (CSS) */}
