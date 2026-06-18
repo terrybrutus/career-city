@@ -37,7 +37,16 @@ export class PreloadScene extends Phaser.Scene {
   create(): void {
     createCareerAnimations(this);
     GameBridge.emit("assetsLoaded");
-    this.scene.start("HomeScene");
+    const sceneParam = new URLSearchParams(window.location.search).get("scene");
+    const sceneMap: Record<string, string> = {
+      home: "HomeScene",
+      town: "TownScene",
+      resume: "ResumeTailorScene",
+      cover: "CoverLetterScene",
+      interview: "InterviewCoachScene",
+      shop: "ItemShopScene",
+    };
+    this.scene.start(sceneMap[sceneParam ?? ""] ?? "HomeScene");
   }
 
   private createLoadingUI(cx: number, cy: number): void {

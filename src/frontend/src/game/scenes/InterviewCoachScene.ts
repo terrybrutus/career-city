@@ -167,7 +167,7 @@ export class InterviewCoachScene extends BaseInteriorScene {
       plaques.fillStyle(0xffcc44, 0.15);
       plaques.fillRect(px + 4, py + 4, 52, 44);
       this.add
-        .text(px + 30, py + 20, "★", {
+        .text(px + 30, py + 20, "*", {
           fontSize: "16px",
           color: "#ffcc44",
           fontFamily: "monospace",

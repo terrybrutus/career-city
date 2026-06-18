@@ -17,8 +17,8 @@ import Phaser from "phaser";
 //   • No console.log / console.warn anywhere.
 // ─────────────────────────────────────────────────────────────
 
-export const ROOM_W = 800;
-export const ROOM_H = 600;
+export const ROOM_W = 960;
+export const ROOM_H = 540;
 
 // Door visual dimensions at bottom-center of the room
 const DOOR_W = 32;

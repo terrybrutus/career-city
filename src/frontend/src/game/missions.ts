@@ -34,7 +34,7 @@ export const MISSIONS: readonly MissionDefinition[] = [
   {
     id: "meet_sam",
     title: "Meet Your Guide",
-    objective: "Talk with Sam in Town Square.",
+    objective: "Talk with Sam in Career Commons.",
     reward: 25,
     chapter: 1,
   },

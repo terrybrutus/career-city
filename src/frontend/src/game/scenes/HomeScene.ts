@@ -11,8 +11,8 @@ import { isTypingInField } from "@/game/utils/inputFocusGuard";
 import type { NPC } from "@/types/game";
 import Phaser from "phaser";
 
-const W = 800;
-const H = 600;
+const W = 960;
+const H = 540;
 
 type HomeObject = {
   id: string;
@@ -27,8 +27,8 @@ const OBJECTS: HomeObject[] = [
   {
     id: "backpack",
     label: "Backpack",
-    x: 618,
-    y: 350,
+    x: 744,
+    y: 330,
     radius: 58,
     message:
       "Backpack equipped. It will carry your resume, cover letter, interview notes, and career tools from room to room.",
@@ -36,8 +36,8 @@ const OBJECTS: HomeObject[] = [
   {
     id: "desk",
     label: "Planning Desk",
-    x: 208,
-    y: 190,
+    x: 238,
+    y: 184,
     radius: 64,
     message:
       "Your desk has a sticky note: pick a real role, gather evidence, then let each mentor improve one part of the application.",
@@ -45,8 +45,8 @@ const OBJECTS: HomeObject[] = [
   {
     id: "calendar",
     label: "Calendar",
-    x: 425,
-    y: 116,
+    x: 486,
+    y: 112,
     radius: 52,
     message:
       "Today's route: pack your Backpack, meet Sam, tailor a resume, build a loadout, practice with Chad, then check in with Ed.",
@@ -54,8 +54,8 @@ const OBJECTS: HomeObject[] = [
   {
     id: "radio",
     label: "Radio",
-    x: 196,
-    y: 395,
+    x: 238,
+    y: 378,
     radius: 54,
     message:
       "The morning show is debating whether bullet points should have plot arcs. Sam calls in and says yes.",
@@ -63,8 +63,8 @@ const OBJECTS: HomeObject[] = [
   {
     id: "plant",
     label: "Desk Plant",
-    x: 96,
-    y: 404,
+    x: 124,
+    y: 380,
     radius: 48,
     message:
       "Healthy growth: water, light, patience, and fewer vague resume bullets.",
@@ -152,11 +152,11 @@ export class HomeScene extends BaseScene {
     for (let x = 48; x < W - 48; x += 32) g.lineBetween(x, 132, x, H - 48);
 
     g.fillStyle(0x191521, 1);
-    g.fillRect(354, 520, 92, 36);
+    g.fillRect(434, 462, 92, 36);
     g.lineStyle(3, 0x39ff14, 0.85);
-    g.strokeRect(354, 520, 92, 36);
+    g.strokeRect(434, 462, 92, 36);
     this.add
-      .text(400, 514, "CAREER CITY", {
+      .text(480, 456, "CAREER COMMONS", {
         fontFamily: '"Space Grotesk", monospace',
         fontSize: "12px",
         color: "#39ff14",
@@ -174,22 +174,22 @@ export class HomeScene extends BaseScene {
   }
 
   private drawObjects(): void {
-    this.add.image(198, 211, LIMEZU.officeDesk).setScale(2.4).setDepth(2);
-    this.add.image(206, 155, LIMEZU.officeScreen).setScale(2.25).setDepth(3);
-    this.add.image(96, 405, LIMEZU.officePlant).setScale(2.25).setDepth(3);
-    this.add.image(190, 401, LIMEZU.officeScreen).setScale(1.6).setDepth(3);
-    this.add.image(420, 120, LIMEZU.officeClock).setScale(2.15).setDepth(3);
+    this.add.image(238, 205, LIMEZU.officeDesk).setScale(2.4).setDepth(2);
+    this.add.image(246, 149, LIMEZU.officeScreen).setScale(2.25).setDepth(3);
+    this.add.image(124, 381, LIMEZU.officePlant).setScale(2.25).setDepth(3);
+    this.add.image(232, 384, LIMEZU.officeScreen).setScale(1.6).setDepth(3);
+    this.add.image(486, 116, LIMEZU.officeClock).setScale(2.15).setDepth(3);
 
     const bed = this.add.graphics();
     bed.setDepth(2);
     bed.fillStyle(0x8a6a4a, 1);
-    bed.fillRoundedRect(544, 126, 142, 82, 8);
+    bed.fillRoundedRect(626, 126, 142, 82, 8);
     bed.fillStyle(0xc8d6f0, 1);
-    bed.fillRoundedRect(556, 136, 118, 60, 6);
+    bed.fillRoundedRect(638, 136, 118, 60, 6);
     bed.fillStyle(0x6f82b5, 1);
-    bed.fillRoundedRect(556, 168, 118, 28, 4);
+    bed.fillRoundedRect(638, 168, 118, 28, 4);
 
-    this.backpackSprite = this.add.container(618, 350).setDepth(4);
+    this.backpackSprite = this.add.container(744, 330).setDepth(4);
     this.updateBackpackDisplay();
   }
 
@@ -199,18 +199,30 @@ export class HomeScene extends BaseScene {
     if (hasBackpack()) return;
     const bag = this.add.graphics();
     bag.fillStyle(0x8c5b2e, 1);
-    bag.fillRoundedRect(-13, -17, 26, 34, 5);
+    bag.fillRoundedRect(-20, -26, 40, 52, 8);
     bag.fillStyle(0xbe823b, 1);
-    bag.fillRoundedRect(-8, -7, 16, 14, 3);
+    bag.fillRoundedRect(-12, -10, 24, 22, 4);
     bag.lineStyle(2, 0x3d2718, 1);
-    bag.strokeRoundedRect(-13, -17, 26, 34, 5);
-    bag.lineBetween(-8, -17, -5, -24);
-    bag.lineBetween(8, -17, 5, -24);
-    this.backpackSprite.add(bag);
+    bag.strokeRoundedRect(-20, -26, 40, 52, 8);
+    bag.lineBetween(-12, -26, -7, -38);
+    bag.lineBetween(12, -26, 7, -38);
+    const label = this.add
+      .text(0, 38, "BACKPACK", {
+        fontFamily: '"Space Grotesk", monospace',
+        fontSize: "12px",
+        color: "#ffbf00",
+        stroke: "#000000",
+        strokeThickness: 3,
+      })
+      .setOrigin(0.5, 0);
+    const glow = this.add.graphics();
+    glow.lineStyle(2, 0xffbf00, 0.75);
+    glow.strokeRoundedRect(-32, -44, 64, 94, 8);
+    this.backpackSprite.add([glow, bag, label]);
   }
 
   private createPlayer(): void {
-    this.player = this.add.container(400, 440).setDepth(10);
+    this.player = this.add.container(480, 400).setDepth(10);
     this.sprite = createCharacterSprite(this, "alex", this.facing);
     this.player.add(this.sprite);
   }
@@ -292,7 +304,7 @@ export class HomeScene extends BaseScene {
     if (Math.abs(dx) > Math.abs(dy)) this.facing = dx > 0 ? "right" : "left";
     else if (dy) this.facing = dy > 0 ? "down" : "up";
     this.player.x = this.clamp(this.player.x + dx, 72, W - 72);
-    this.player.y = this.clamp(this.player.y + dy, 150, H - 52);
+    this.player.y = this.clamp(this.player.y + dy, 150, H - 42);
     setCharacterMotion(this.sprite, "alex", this.facing, Boolean(dx || dy));
     if (dx || dy) {
       GameBridge.emit("playerMoved", { x: this.player.x, y: this.player.y });
@@ -309,7 +321,7 @@ export class HomeScene extends BaseScene {
         distance = d;
       }
     }
-    const atExit = Math.hypot(this.player.x - 400, this.player.y - 538) < 56;
+    const atExit = Math.hypot(this.player.x - 480, this.player.y - 492) < 56;
     this.nearby = atExit ? "exit" : closest;
     if (!this.nearby) {
       this.prompt.setVisible(false);
@@ -327,7 +339,7 @@ export class HomeScene extends BaseScene {
 
   private createPrompt(): void {
     this.prompt = this.add
-      .text(400, 570, "", {
+      .text(480, 512, "", {
         fontFamily: '"Space Grotesk", monospace',
         fontSize: "13px",
         color: "#ffffff",
@@ -352,7 +364,7 @@ export class HomeScene extends BaseScene {
       }
       this.cameras.main.fadeOut(280, 0, 0, 0);
       this.cameras.main.once("camerafadeoutcomplete", () => {
-        this.scene.start("TownScene", { returnX: 400, returnY: 590 });
+        this.scene.start("TownScene", { returnX: 480, returnY: 520 });
       });
       return;
     }

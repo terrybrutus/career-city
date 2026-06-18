@@ -15,8 +15,9 @@ export const LOCATIONS: GameLocation[] = [
   },
   {
     id: "town_square",
-    name: "TOWN SQUARE",
-    description: "Where dreams come to file their taxes",
+    name: "CAREER COMMONS",
+    description:
+      "A park-like hub where each mentor owns one step of the job search",
     color: "#39FF14",
     buildingColor: "#39FF14",
     musicTrack: "town_square",

@@ -19,7 +19,7 @@ export abstract class BaseScene extends Phaser.Scene {
   private applyResponsiveCamera(): void {
     const { width, height } = this.scale;
     this.cameras.main.setZoom(
-      Math.max(
+      Math.min(
         width / this.responsiveWorld.width,
         height / this.responsiveWorld.height,
       ),

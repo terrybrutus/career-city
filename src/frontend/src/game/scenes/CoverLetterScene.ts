@@ -132,7 +132,7 @@ export class CoverLetterScene extends BaseInteriorScene {
       .setDepth(3);
     [
       "Results-driven",
-      "Passionate about…",
+      "Passionate about...",
       "Synergistic growth",
       "Team player",
     ].forEach((phrase, i) => {

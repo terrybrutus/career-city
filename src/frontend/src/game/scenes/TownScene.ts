@@ -10,8 +10,8 @@ import Phaser from "phaser";
 // ─────────────────────────────────────────────
 // Map layout constants (virtual pixels)
 // ─────────────────────────────────────────────
-const MAP_W = 800;
-const MAP_H = 600;
+const MAP_W = 960;
+const MAP_H = 540;
 const TILE = 32;
 
 type BuildingDef = {
@@ -28,28 +28,28 @@ type BuildingDef = {
 
 // Town area centers Ed can migrate to
 const ED_AREA_CENTERS = [
-  { x: 400, y: 300 }, // town center
-  { x: 150, y: 150 }, // near resume tailor
-  { x: 650, y: 150 }, // near interview coach
-  { x: 650, y: 450 }, // near cover letter
-  { x: 150, y: 450 }, // near item shop
-  { x: 400, y: 150 }, // north path
-  { x: 400, y: 340 }, // south of fountain, clear of home roof
+  { x: 480, y: 260 },
+  { x: 180, y: 210 },
+  { x: 780, y: 210 },
+  { x: 780, y: 390 },
+  { x: 180, y: 390 },
+  { x: 480, y: 160 },
+  { x: 480, y: 345 },
 ];
 
 // Bench in the bottom-left corner of the town square box
 // Moved ~40px left per user request
-const BENCH_X = 316;
-const BENCH_Y = 314;
+const BENCH_X = 394;
+const BENCH_Y = 300;
 
 const BUILDINGS: BuildingDef[] = [
   {
     id: "home",
     label: "HOME",
-    x: 296,
-    y: 372,
+    x: 376,
+    y: 364,
     w: 208,
-    h: 184,
+    h: 144,
     accentColor: 0x39ff14,
     accentHex: "#39ff14",
     route: "/",
@@ -57,10 +57,10 @@ const BUILDINGS: BuildingDef[] = [
   {
     id: "resume_tailor",
     label: "RESUME\nTAILOR",
-    x: 48,
-    y: 60,
-    w: 140,
-    h: 100,
+    x: 76,
+    y: 70,
+    w: 170,
+    h: 122,
     accentColor: 0xff00ff,
     accentHex: "#ff00ff",
     route: "/resume",
@@ -68,10 +68,10 @@ const BUILDINGS: BuildingDef[] = [
   {
     id: "cover_letter_corner",
     label: "COVER\nLETTER",
-    x: 608,
-    y: 380,
-    w: 140,
-    h: 100,
+    x: 714,
+    y: 316,
+    w: 170,
+    h: 122,
     accentColor: 0x00ffff,
     accentHex: "#00ffff",
     route: "/coverletter",
@@ -79,10 +79,10 @@ const BUILDINGS: BuildingDef[] = [
   {
     id: "interview_coach",
     label: "INTERVIEW\nCOACH",
-    x: 608,
-    y: 60,
-    w: 140,
-    h: 100,
+    x: 714,
+    y: 70,
+    w: 170,
+    h: 122,
     accentColor: 0xffaa00,
     accentHex: "#ffaa00",
     route: "/interview",
@@ -90,10 +90,10 @@ const BUILDINGS: BuildingDef[] = [
   {
     id: "item_shop",
     label: "ITEM\nSHOP",
-    x: 48,
-    y: 380,
-    w: 140,
-    h: 100,
+    x: 76,
+    y: 316,
+    w: 170,
+    h: 122,
     accentColor: 0x8844ff,
     accentHex: "#8844ff",
     route: "/",
@@ -114,8 +114,8 @@ const NPC_POSITIONS: NPCDef[] = [
   // Vera — female, Resume Tailor: shifted LEFT of door (building bottom y:160, door cx ~118)
   {
     npcId: "vera_hr",
-    x: 80, // was 115, shifted left ~30
-    y: 178,
+    x: 156,
+    y: 212,
     gender: "female",
     primaryColor: 0x00aaaa,
     hairColor: 0x8844bb,
@@ -123,8 +123,8 @@ const NPC_POSITIONS: NPCDef[] = [
   // Chad — male, Interview Coach: shifted RIGHT and DOWN (building bottom y:160, door cx ~678)
   {
     npcId: "chad_coach",
-    x: 705, // was 675, shifted right +30; also down +25 handled by y
-    y: 200, // was 175, down +25
+    x: 802,
+    y: 212,
     gender: "male",
     primaryColor: 0x3366cc,
     hairColor: 0x5a3010,
@@ -132,8 +132,8 @@ const NPC_POSITIONS: NPCDef[] = [
   // Penny — female, Cover Letter Corner: shifted LEFT (building bottom y:480, door cx ~678)
   {
     npcId: "penny_writer",
-    x: 640, // was 675, shifted left ~35
-    y: 498,
+    x: 800,
+    y: 466,
     gender: "female",
     primaryColor: 0xcc3366,
     hairColor: 0xddaa22,
@@ -141,8 +141,8 @@ const NPC_POSITIONS: NPCDef[] = [
   // Felix — male, Item Shop: shifted RIGHT of door (building bottom y:480, door cx ~118)
   {
     npcId: "felix_shop",
-    x: 148, // was 115, shifted right +33
-    y: 498,
+    x: 160,
+    y: 466,
     gender: "male",
     primaryColor: 0x338844,
     hairColor: 0x222222,
@@ -383,46 +383,44 @@ export class TownScene extends BaseScene {
     const pathEdge = 0x2a2a38;
 
     g.fillStyle(pathColor, 1);
-    // Horizontal main street
-    g.fillRect(0, 270, MAP_W, 48);
-    // Vertical main street
-    g.fillRect(370, 0, 60, MAP_H);
-
-    // Branch paths to buildings
-    g.fillRect(60, 160, 80, 110); // top-left
-    g.fillRect(620, 160, 80, 110); // top-right
-    g.fillRect(60, 318, 80, 82); // bottom-left
-    g.fillRect(620, 318, 80, 82); // bottom-right
+    g.fillRect(0, 246, MAP_W, 48);
+    g.fillRect(450, 0, 60, MAP_H);
+    g.fillRect(142, 180, 52, 66);
+    g.fillRect(766, 180, 52, 66);
+    g.fillRect(142, 294, 52, 44);
+    g.fillRect(766, 294, 52, 44);
+    g.fillRect(430, 294, 100, 58);
 
     g.lineStyle(2, pathEdge, 0.9);
-    g.strokeRect(0, 270, MAP_W, 48);
-    g.strokeRect(370, 0, 60, MAP_H);
+    g.strokeRect(0, 246, MAP_W, 48);
+    g.strokeRect(450, 0, 60, MAP_H);
 
     g.fillStyle(0x454555, 0.25);
     for (let x = 0; x < MAP_W; x += 16) {
-      g.fillRect(x, 270, 1, 48);
+      g.fillRect(x, 246, 1, 48);
     }
     for (let y = 0; y < MAP_H; y += 16) {
-      g.fillRect(370, y, 60, 1);
+      g.fillRect(450, y, 60, 1);
     }
   }
 
   private drawTownSquare(): void {
-    const cx = 392;
-    const cy = 294;
+    const cx = 480;
+    const cy = 270;
     const g = this.add.graphics();
     g.setDepth(2);
 
-    // Slightly larger town square area (was 120x100, now 140x110)
     g.fillStyle(0x1f3a1f, 1);
-    g.fillRect(cx - 70, cy - 55, 140, 110);
+    g.fillRoundedRect(cx - 116, cy - 74, 232, 148, 18);
+    g.lineStyle(3, 0x39ff14, 0.35);
+    g.strokeRoundedRect(cx - 116, cy - 74, 232, 148, 18);
 
     // Corner TREES replacing lime-green squares
     const treePositions: [number, number][] = [
-      [cx - 64, cy - 48],
-      [cx + 61, cy - 48],
-      [cx - 64, cy + 45],
-      [cx + 61, cy + 45],
+      [cx - 96, cy - 58],
+      [cx + 94, cy - 58],
+      [cx - 96, cy + 58],
+      [cx + 94, cy + 58],
     ];
     for (const [tx, ty] of treePositions) {
       const tg = this.add.graphics();
@@ -444,7 +442,17 @@ export class TownScene extends BaseScene {
       tg.fillCircle(tx - 2, ty - 10, 5);
     }
 
-    // Fountain
+    this.add
+      .text(cx, cy - 62, "CAREER COMMONS", {
+        fontSize: "14px",
+        color: "#39ff14",
+        fontFamily: '"Space Grotesk", monospace',
+        stroke: "#000000",
+        strokeThickness: 3,
+      })
+      .setOrigin(0.5)
+      .setDepth(5);
+
     g.fillStyle(0x2a4a6a, 1);
     g.fillCircle(cx, cy, 18);
     g.lineStyle(3, 0x4488aa, 1);
@@ -466,11 +474,11 @@ export class TownScene extends BaseScene {
 
     // Sign post
     g.fillStyle(0x5a3a1a, 1);
-    g.fillRect(cx + 25, cy - 40, 4, 20);
+    g.fillRect(cx + 42, cy - 36, 4, 20);
     g.fillStyle(0x2a2a0a, 1);
-    g.fillRect(cx + 18, cy - 46, 36, 10);
+    g.fillRect(cx + 34, cy - 42, 52, 12);
     g.lineStyle(2, 0x39ff14, 0.8);
-    g.strokeRect(cx + 18, cy - 46, 36, 10);
+    g.strokeRect(cx + 34, cy - 42, 52, 12);
   }
 
   private drawBuildings(): void {
@@ -484,7 +492,7 @@ export class TownScene extends BaseScene {
       const image = this.add
         .image(b.x + b.w / 2, b.y + b.h, LIMEZU.townHome)
         .setOrigin(0.5, 1)
-        .setScale(0.36)
+        .setScale(0.27)
         .setDepth(3);
       this.add
         .text(b.x + b.w / 2, b.y - 10, b.label, {
@@ -502,101 +510,17 @@ export class TownScene extends BaseScene {
       shadow.fillEllipse(image.x, b.y + b.h - 4, b.w, 28);
       return;
     }
-    const g = this.add.graphics();
-    g.setDepth(3);
-    const { x, y, w, h, accentColor } = b;
-
-    // Shadow
-    g.fillStyle(0x000000, 0.4);
-    g.fillRect(x + 4, y + 4, w, h);
-
-    // Foundation
-    g.fillStyle(0x1a1a2a, 1);
-    g.fillRect(x, y, w, h);
-
-    // Walls
-    g.fillStyle(b.id === "home" ? 0x5b425f : 0x2a2a3a, 1);
-    g.fillRect(x + 2, y + 2, w - 4, h - 4);
-
-    // Roof area
-    const roofH = Math.floor(h * 0.35);
-    g.fillStyle(accentColor, 0.85);
-    g.fillRect(x + 2, y + 2, w - 4, roofH);
-    if (b.id === "home") {
-      g.fillStyle(0x4a2738, 1);
-      g.fillTriangle(x - 8, y + roofH, x + w / 2, y - 24, x + w + 8, y + roofH);
-      g.lineStyle(3, 0x39ff14, 0.8);
-      g.strokeTriangle(
-        x - 8,
-        y + roofH,
-        x + w / 2,
-        y - 24,
-        x + w + 8,
-        y + roofH,
-      );
-      g.fillStyle(0x6b3b38, 1);
-      g.fillRect(x + w - 30, y - 20, 14, 35);
-      g.fillStyle(0xffbf00, 0.8);
-      g.fillRect(x + 18, y + roofH + 8, 18, 14);
-      g.fillRect(x + w - 36, y + roofH + 8, 18, 14);
-      g.fillStyle(0x245b2b, 1);
-      g.fillCircle(x - 8, y + h - 4, 13);
-      g.fillCircle(x + w + 8, y + h - 4, 13);
-    }
-
-    g.fillStyle(0xffffff, 0.12);
-    g.fillRect(x + 4, y + 4, w - 8, 4);
-
-    // Brick lines
-    g.lineStyle(1, 0x3a3a4a, 0.5);
-    for (let row = roofH + 4; row < h - 4; row += 8) {
-      g.beginPath();
-      g.moveTo(x + 4, y + row);
-      g.lineTo(x + w - 4, y + row);
-      g.strokePath();
-    }
-
-    // Door
-    const doorW = 14;
-    const doorH = 20;
-    const doorX = x + Math.floor((w - doorW) / 2);
-    const doorY = y + h - doorH - 2;
-    g.fillStyle(0x3a1a0a, 1);
-    g.fillRect(doorX, doorY, doorW, doorH);
-    g.lineStyle(2, accentColor, 0.9);
-    g.strokeRect(doorX, doorY, doorW, doorH);
-    g.fillStyle(accentColor, 1);
-    g.fillCircle(doorX + doorW - 3, doorY + doorH / 2, 2);
-
-    // Windows
-    const winY = y + roofH + 6;
-    const winSize = 10;
-    for (const [wx, wy] of [
-      [x + 10, winY],
-      [x + w - 10 - winSize, winY],
-    ] as [number, number][]) {
-      g.fillStyle(accentColor, 0.2);
-      g.fillRect(wx, wy, winSize, winSize);
-      g.lineStyle(2, accentColor, 0.8);
-      g.strokeRect(wx, wy, winSize, winSize);
-      g.lineStyle(1, accentColor, 0.4);
-      g.beginPath();
-      g.moveTo(wx + winSize / 2, wy);
-      g.lineTo(wx + winSize / 2, wy + winSize);
-      g.moveTo(wx, wy + winSize / 2);
-      g.lineTo(wx + winSize, wy + winSize / 2);
-      g.strokePath();
-    }
-
-    // Outline
-    g.lineStyle(3, accentColor, 1);
-    g.strokeRect(x, y, w, h);
-    g.lineStyle(1, accentColor, 0.3);
-    g.strokeRect(x - 2, y - 2, w + 4, h + 4);
-
-    // Building label ABOVE building with a gap
+    const building = this.add
+      .image(b.x + b.w / 2, b.y + b.h, LIMEZU.townOffice)
+      .setOrigin(0.5, 1)
+      .setScale(0.2)
+      .setTint(b.accentColor)
+      .setDepth(3);
+    const shadow = this.add.graphics().setDepth(2);
+    shadow.fillStyle(0x000000, 0.28);
+    shadow.fillEllipse(building.x, b.y + b.h - 4, b.w, 24);
     this.add
-      .text(x + w / 2, b.id === "home" ? y - 30 : y - 8, b.label, {
+      .text(b.x + b.w / 2, b.y - 8, b.label, {
         fontSize: "17px",
         color: b.accentHex,
         fontFamily: '"Space Grotesk", monospace',
@@ -785,8 +709,8 @@ export class TownScene extends BaseScene {
   // Ed — wandering NPC in the grass
   // ─────────────────────────────────────────────
   private createEdWanderer(): void {
-    const startX = 400;
-    const startY = 480;
+    const startX = 585;
+    const startY = 340;
     const container = this.add.container(startX, startY);
     container.setDepth(5);
 
@@ -1110,8 +1034,8 @@ export class TownScene extends BaseScene {
   // Player
   // ─────────────────────────────────────────────
   private createPlayer(spawnX?: number, spawnY?: number): void {
-    const sx = spawnX ?? 392;
-    const sy = spawnY ?? 294;
+    const sx = spawnX ?? 480;
+    const sy = spawnY ?? 520;
     this.player = this.add.container(sx, sy);
     this.player.setDepth(6);
 

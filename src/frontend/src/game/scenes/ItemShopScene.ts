@@ -164,7 +164,7 @@ export class ItemShopScene extends BaseInteriorScene {
     sign.lineTo(ROOM_W / 2 + 70, 60);
     sign.strokePath();
     this.add
-      .text(ROOM_W / 2, 82, "◈ FELIX'S EMPORIUM ◈", {
+      .text(ROOM_W / 2, 82, "FELIX'S EMPORIUM", {
         fontSize: "11px",
         color: "#cc88ff",
         fontFamily: '"Space Grotesk", monospace',
