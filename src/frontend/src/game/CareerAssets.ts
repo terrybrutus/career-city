@@ -20,6 +20,25 @@ export const LIMEZU = {
   officeDesk: "cc-office-desk",
   officeWorkstation: "cc-office-workstation",
   officeClock: "cc-office-clock",
+  officeBackpack: "cc-office-backpack",
+  officeDoor: "cc-office-door",
+  officeCalendar: "cc-office-calendar",
+  officeRadio: "cc-office-radio",
+  officeLaptop: "cc-office-laptop",
+  officeCouch: "cc-office-couch",
+  officeWhiteboard: "cc-office-whiteboard",
+  townBushRound: "cc-town-bush-round",
+  townBushWide: "cc-town-bush-wide",
+  townBushTall: "cc-town-bush-tall",
+  townBench: "cc-town-bench",
+  townFountain: "cc-town-fountain",
+  townGardenArch: "cc-town-garden-arch",
+  townGardenWall: "cc-town-garden-wall",
+  townFlowerVase: "cc-town-flower-vase",
+  townSignpost: "cc-town-signpost",
+  townStreetLamp: "cc-town-street-lamp",
+  townMailbox: "cc-town-mailbox",
+  townRoadSign: "cc-town-road-sign",
 } as const;
 
 const characterSheets: Record<CharacterKey, string> = {
@@ -37,10 +56,10 @@ const runSheets: Record<CharacterKey, string> = {
 };
 
 const frameStart: Record<Facing, number> = {
-  down: 0,
+  down: 18,
   up: 6,
   left: 12,
-  right: 18,
+  right: 0,
 };
 
 export function preloadCareerAssets(scene: Phaser.Scene): void {
@@ -101,6 +120,82 @@ export function preloadCareerAssets(scene: Phaser.Scene): void {
   scene.load.image(
     LIMEZU.officeClock,
     "/assets/career-city/limezu/office-clock.png",
+  );
+  scene.load.image(
+    LIMEZU.officeBackpack,
+    "/assets/career-city/limezu/office-backpack.png",
+  );
+  scene.load.image(
+    LIMEZU.officeDoor,
+    "/assets/career-city/limezu/office-door.png",
+  );
+  scene.load.image(
+    LIMEZU.officeCalendar,
+    "/assets/career-city/limezu/office-calendar.png",
+  );
+  scene.load.image(
+    LIMEZU.officeRadio,
+    "/assets/career-city/limezu/office-radio.png",
+  );
+  scene.load.image(
+    LIMEZU.officeLaptop,
+    "/assets/career-city/limezu/office-laptop.png",
+  );
+  scene.load.image(
+    LIMEZU.officeCouch,
+    "/assets/career-city/limezu/office-couch.png",
+  );
+  scene.load.image(
+    LIMEZU.officeWhiteboard,
+    "/assets/career-city/limezu/office-whiteboard.png",
+  );
+  scene.load.image(
+    LIMEZU.townBushRound,
+    "/assets/career-city/limezu/town-bush-round.png",
+  );
+  scene.load.image(
+    LIMEZU.townBushWide,
+    "/assets/career-city/limezu/town-bush-wide.png",
+  );
+  scene.load.image(
+    LIMEZU.townBushTall,
+    "/assets/career-city/limezu/town-bush-tall.png",
+  );
+  scene.load.image(
+    LIMEZU.townBench,
+    "/assets/career-city/limezu/town-bench.png",
+  );
+  scene.load.image(
+    LIMEZU.townFountain,
+    "/assets/career-city/limezu/town-fountain.png",
+  );
+  scene.load.image(
+    LIMEZU.townGardenArch,
+    "/assets/career-city/limezu/town-garden-arch.png",
+  );
+  scene.load.image(
+    LIMEZU.townGardenWall,
+    "/assets/career-city/limezu/town-garden-wall.png",
+  );
+  scene.load.image(
+    LIMEZU.townFlowerVase,
+    "/assets/career-city/limezu/town-flower-vase.png",
+  );
+  scene.load.image(
+    LIMEZU.townSignpost,
+    "/assets/career-city/limezu/town-signpost.png",
+  );
+  scene.load.image(
+    LIMEZU.townStreetLamp,
+    "/assets/career-city/limezu/town-street-lamp.png",
+  );
+  scene.load.image(
+    LIMEZU.townMailbox,
+    "/assets/career-city/limezu/town-mailbox.png",
+  );
+  scene.load.image(
+    LIMEZU.townRoadSign,
+    "/assets/career-city/limezu/town-road-sign.png",
   );
 
   for (const key of Object.keys(characterSheets) as CharacterKey[]) {

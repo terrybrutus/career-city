@@ -1,4 +1,10 @@
 import { NPCS } from "@/data/npcs";
+import {
+  type CharacterKey,
+  type Facing,
+  createCharacterSprite,
+  setCharacterMotion,
+} from "@/game/CareerAssets";
 import { GameBridge } from "@/game/GameBridge";
 import { hasBackpack } from "@/game/playerState";
 import { BaseScene } from "@/game/scenes/BaseScene";
@@ -46,9 +52,17 @@ type SceneData = {
 type NpcEntry = {
   container: Phaser.GameObjects.Container;
   graphics: Phaser.GameObjects.Graphics;
+  sprite?: Phaser.GameObjects.Sprite;
   npcId: string;
   x: number;
   y: number;
+};
+
+const INTERIOR_NPC_CHARACTERS: Record<string, CharacterKey> = {
+  vera_hr: "amelia",
+  penny_writer: "amelia",
+  chad_coach: "adam",
+  felix_shop: "bob",
 };
 
 export abstract class BaseInteriorScene extends BaseScene {
@@ -64,7 +78,8 @@ export abstract class BaseInteriorScene extends BaseScene {
   private returnY = ROOM_H - 80;
   private player!: Phaser.GameObjects.Container;
   private playerBody!: Phaser.GameObjects.Graphics;
-  private playerFacing: "up" | "down" | "left" | "right" = "up";
+  private playerSprite!: Phaser.GameObjects.Sprite;
+  private playerFacing: Facing = "up";
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private wasd!: {
     up: Phaser.Input.Keyboard.Key;
@@ -245,12 +260,15 @@ export abstract class BaseInteriorScene extends BaseScene {
     container.setDepth(6);
 
     const g = this.add.graphics();
-    if (gender === "female") {
-      this.drawFemaleCharacter(g, primaryColor, hairColor);
-    } else {
-      this.drawMaleCharacter(g, primaryColor, hairColor);
-    }
-    container.add(g);
+    void gender;
+    void primaryColor;
+    void hairColor;
+    const sprite = createCharacterSprite(
+      this,
+      INTERIOR_NPC_CHARACTERS[npcId] ?? "bob",
+      "down",
+    );
+    container.add(sprite);
 
     // Name label tight above head
     const label = this.add.text(0, -20, npcData.name, {
@@ -263,7 +281,7 @@ export abstract class BaseInteriorScene extends BaseScene {
     label.setOrigin(0.5, 1);
     container.add(label);
 
-    this.npcEntry = { container, graphics: g, npcId, x, y };
+    this.npcEntry = { container, graphics: g, sprite, npcId, x, y };
 
     // Wire up E and Enter keys for NPC dialogue
     // These only fire dialogue — they have ZERO connection to exit logic
@@ -332,8 +350,8 @@ export abstract class BaseInteriorScene extends BaseScene {
     this.player.setDepth(7);
 
     this.playerBody = this.add.graphics();
-    this.drawPlayerCharacter(this.playerBody, "up");
-    this.player.add(this.playerBody);
+    this.playerSprite = createCharacterSprite(this, "alex", "up");
+    this.player.add(this.playerSprite);
 
     const glow = this.add.graphics();
     glow.fillStyle(0x39ff14, 0.1);
@@ -497,8 +515,13 @@ export abstract class BaseInteriorScene extends BaseScene {
     this.player.x = newX;
     this.player.y = newY;
 
+    setCharacterMotion(
+      this.playerSprite,
+      "alex",
+      this.playerFacing,
+      dx !== 0 || dy !== 0,
+    );
     if (dx !== 0 || dy !== 0) {
-      this.drawPlayerCharacter(this.playerBody, this.playerFacing);
       GameBridge.emit("playerMoved", { x: this.player.x, y: this.player.y });
     }
   }
@@ -813,125 +836,4 @@ export abstract class BaseInteriorScene extends BaseScene {
     };
     GameBridge.emit("dialogueOpened", singleLine);
   };
-
-  // ── Character Drawing ──────────────────────────────
-
-  protected drawFemaleCharacter(
-    g: Phaser.GameObjects.Graphics,
-    bodyColor: number,
-    hairColor: number,
-  ): void {
-    g.fillStyle(0x000000, 0.25);
-    g.fillEllipse(0, 14, 16, 5);
-    g.fillStyle(hairColor, 1);
-    g.fillRect(-6, -20, 12, 6);
-    g.fillRect(-7, -16, 3, 14);
-    g.fillRect(4, -16, 3, 14);
-    g.fillRect(-6, -2, 3, 4);
-    g.fillRect(3, -2, 3, 4);
-    g.fillStyle(0xf5c5a0, 1);
-    g.fillRect(-5, -18, 10, 10);
-    g.fillStyle(0x333333, 1);
-    g.fillRect(-3, -14, 2, 2);
-    g.fillRect(1, -14, 2, 2);
-    g.fillStyle(0x000000, 1);
-    g.fillRect(-4, -15, 1, 1);
-    g.fillRect(3, -15, 1, 1);
-    g.fillStyle(hairColor, 1);
-    g.fillRect(-5, -20, 10, 4);
-    g.fillRect(-7, -18, 2, 4);
-    g.fillRect(5, -18, 2, 4);
-    g.fillStyle(bodyColor, 1);
-    g.fillRect(-5, -8, 10, 10);
-    g.fillRect(-7, 2, 14, 8);
-    g.fillRect(-6, 8, 12, 4);
-    g.fillStyle(bodyColor, 1);
-    g.fillRect(-8, -7, 3, 7);
-    g.fillRect(5, -7, 3, 7);
-    g.fillStyle(0xf5c5a0, 1);
-    g.fillRect(-8, 0, 3, 3);
-    g.fillRect(5, 0, 3, 3);
-    g.fillStyle(0xf5c5a0, 1);
-    g.fillRect(-4, 12, 3, 5);
-    g.fillRect(1, 12, 3, 5);
-    g.fillStyle(0x3a2a5a, 1);
-    g.fillRect(-5, 17, 5, 3);
-    g.fillRect(0, 17, 5, 3);
-  }
-
-  protected drawMaleCharacter(
-    g: Phaser.GameObjects.Graphics,
-    bodyColor: number,
-    hairColor: number,
-  ): void {
-    g.fillStyle(0x000000, 0.25);
-    g.fillEllipse(0, 14, 18, 5);
-    g.fillStyle(0xf5c5a0, 1);
-    g.fillRect(-5, -16, 10, 10);
-    g.fillStyle(hairColor, 1);
-    g.fillRect(-5, -17, 10, 5);
-    g.fillRect(-6, -15, 2, 4);
-    g.fillRect(4, -15, 2, 4);
-    g.fillStyle(0x000000, 1);
-    g.fillRect(-3, -13, 2, 2);
-    g.fillRect(1, -13, 2, 2);
-    g.fillStyle(bodyColor, 1);
-    g.fillRect(-6, -6, 12, 10);
-    g.fillStyle(0xffffff, 0.3);
-    g.fillRect(-2, -6, 4, 3);
-    g.fillStyle(bodyColor, 1);
-    g.fillRect(-9, -5, 3, 8);
-    g.fillRect(6, -5, 3, 8);
-    g.fillStyle(0xf5c5a0, 1);
-    g.fillRect(-9, 3, 3, 3);
-    g.fillRect(6, 3, 3, 3);
-    g.fillStyle(0x1a2a4a, 1);
-    g.fillRect(-5, 4, 4, 7);
-    g.fillRect(1, 4, 4, 7);
-    g.fillStyle(0x4a3a2a, 1);
-    g.fillRect(-6, 11, 5, 3);
-    g.fillRect(1, 11, 5, 3);
-  }
-
-  private drawPlayerCharacter(
-    g: Phaser.GameObjects.Graphics,
-    facing: "up" | "down" | "left" | "right" = "down",
-  ): void {
-    g.clear();
-    const flip = facing === "left";
-    const sx = flip ? -1 : 1;
-    g.fillStyle(0x000000, 0.3);
-    g.fillEllipse(0, 12, 18, 6);
-    if (hasBackpack()) {
-      g.fillStyle(0x8c5b2e, 1);
-      g.fillRoundedRect(-9, -8, 18, 18, 3);
-      g.lineStyle(2, 0xffbf00, 1);
-      g.strokeRoundedRect(-9, -8, 18, 18, 3);
-    }
-    g.fillStyle(0x226622, 1);
-    g.fillRect(-6 * sx, -6, 12, 10);
-    g.fillStyle(0xf5c5a0, 1);
-    g.fillRect(-5, -16, 10, 10);
-    g.fillStyle(0x5a3a10, 1);
-    g.fillRect(-5, -17, 10, 4);
-    g.fillRect(-6, -15, 2, 3);
-    g.fillRect(4, -15, 2, 3);
-    g.fillStyle(0x000000, 1);
-    if (facing !== "up") {
-      const eyeOff = facing === "right" ? 2 : facing === "left" ? -2 : 0;
-      g.fillRect(-3 + eyeOff, -13, 2, 2);
-      g.fillRect(1 + eyeOff, -13, 2, 2);
-    }
-    g.fillStyle(0x1a1a5a, 1);
-    g.fillRect(-5, 4, 4, 6);
-    g.fillRect(1, 4, 4, 6);
-    g.fillStyle(0x4a3a2a, 1);
-    g.fillRect(-6, 10, 5, 3);
-    g.fillRect(1, 10, 5, 3);
-    g.fillStyle(0xaaaaaa, 1);
-    const toolX = facing === "left" ? -12 : 8;
-    g.fillRect(toolX, -2, 2, 8);
-    g.fillStyle(0xffaa00, 1);
-    g.fillRect(toolX - 1, -2, 4, 3);
-  }
 }

@@ -151,10 +151,11 @@ export class HomeScene extends BaseScene {
     for (let y = 144; y < H - 48; y += 32) g.lineBetween(48, y, W - 48, y);
     for (let x = 48; x < W - 48; x += 32) g.lineBetween(x, 132, x, H - 48);
 
-    g.fillStyle(0x191521, 1);
-    g.fillRect(434, 462, 92, 36);
-    g.lineStyle(3, 0x39ff14, 0.85);
-    g.strokeRect(434, 462, 92, 36);
+    this.add
+      .image(480, 504, LIMEZU.officeDoor)
+      .setOrigin(0.5, 1)
+      .setScale(1.35)
+      .setDepth(3);
     this.add
       .text(480, 456, "CAREER COMMONS", {
         fontFamily: '"Space Grotesk", monospace',
@@ -177,8 +178,8 @@ export class HomeScene extends BaseScene {
     this.add.image(238, 205, LIMEZU.officeDesk).setScale(2.4).setDepth(2);
     this.add.image(246, 149, LIMEZU.officeScreen).setScale(2.25).setDepth(3);
     this.add.image(124, 381, LIMEZU.officePlant).setScale(2.25).setDepth(3);
-    this.add.image(232, 384, LIMEZU.officeScreen).setScale(1.6).setDepth(3);
-    this.add.image(486, 116, LIMEZU.officeClock).setScale(2.15).setDepth(3);
+    this.add.image(232, 384, LIMEZU.officeRadio).setScale(2.1).setDepth(3);
+    this.add.image(486, 116, LIMEZU.officeCalendar).setScale(2.1).setDepth(3);
 
     const bed = this.add.graphics();
     bed.setDepth(2);
@@ -196,18 +197,14 @@ export class HomeScene extends BaseScene {
   private updateBackpackDisplay(): void {
     if (!this.backpackSprite) return;
     this.backpackSprite.removeAll(true);
-    if (hasBackpack()) return;
-    const bag = this.add.graphics();
-    bag.fillStyle(0x8c5b2e, 1);
-    bag.fillRoundedRect(-20, -26, 40, 52, 8);
-    bag.fillStyle(0xbe823b, 1);
-    bag.fillRoundedRect(-12, -10, 24, 22, 4);
-    bag.lineStyle(2, 0x3d2718, 1);
-    bag.strokeRoundedRect(-20, -26, 40, 52, 8);
-    bag.lineBetween(-12, -26, -7, -38);
-    bag.lineBetween(12, -26, 7, -38);
+    const collected = hasBackpack();
+    const bag = this.add
+      .image(0, 0, LIMEZU.officeBackpack)
+      .setOrigin(0.5)
+      .setScale(collected ? 1.45 : 1.75)
+      .setAlpha(collected ? 0.62 : 1);
     const label = this.add
-      .text(0, 38, "BACKPACK", {
+      .text(0, 38, collected ? "EQUIPPED" : "BACKPACK", {
         fontFamily: '"Space Grotesk", monospace',
         fontSize: "12px",
         color: "#ffbf00",
@@ -217,7 +214,7 @@ export class HomeScene extends BaseScene {
       .setOrigin(0.5, 0);
     const glow = this.add.graphics();
     glow.lineStyle(2, 0xffbf00, 0.75);
-    glow.strokeRoundedRect(-32, -44, 64, 94, 8);
+    glow.strokeRoundedRect(-28, -36, 56, 82, 8);
     this.backpackSprite.add([glow, bag, label]);
   }
 
@@ -364,7 +361,7 @@ export class HomeScene extends BaseScene {
       }
       this.cameras.main.fadeOut(280, 0, 0, 0);
       this.cameras.main.once("camerafadeoutcomplete", () => {
-        this.scene.start("TownScene", { returnX: 480, returnY: 520 });
+        this.scene.start("TownScene", { returnX: 480, returnY: 532 });
       });
       return;
     }

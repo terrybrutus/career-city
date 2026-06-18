@@ -1,7 +1,12 @@
 import { NPCS } from "@/data/npcs";
-import { LIMEZU } from "@/game/CareerAssets";
+import {
+  type CharacterKey,
+  type Facing,
+  LIMEZU,
+  createCharacterSprite,
+  setCharacterMotion,
+} from "@/game/CareerAssets";
 import { GameBridge } from "@/game/GameBridge";
-import { hasBackpack } from "@/game/playerState";
 import { BaseScene } from "@/game/scenes/BaseScene";
 import { isTypingInField } from "@/game/utils/inputFocusGuard";
 import type { NPC } from "@/types/game";
@@ -116,9 +121,8 @@ type NPCDef = {
   npcId: string;
   x: number;
   y: number;
-  gender: "male" | "female";
-  primaryColor: number;
-  hairColor: number;
+  character: CharacterKey;
+  facing: Facing;
 };
 
 // NPC home positions — placed BESIDE building doors, not in front of doorways
@@ -128,36 +132,32 @@ const NPC_POSITIONS: NPCDef[] = [
     npcId: "vera_hr",
     x: 166,
     y: 212,
-    gender: "female",
-    primaryColor: 0x00aaaa,
-    hairColor: 0x8844bb,
+    character: "amelia",
+    facing: "down",
   },
   // Chad — male, Interview Coach: shifted RIGHT and DOWN (building bottom y:160, door cx ~678)
   {
     npcId: "chad_coach",
     x: 846,
     y: 212,
-    gender: "male",
-    primaryColor: 0x3366cc,
-    hairColor: 0x5a3010,
+    character: "adam",
+    facing: "down",
   },
   // Penny — female, Cover Letter Corner: shifted LEFT (building bottom y:480, door cx ~678)
   {
     npcId: "penny_writer",
     x: 846,
     y: 466,
-    gender: "female",
-    primaryColor: 0xcc3366,
-    hairColor: 0xddaa22,
+    character: "amelia",
+    facing: "down",
   },
   // Felix — male, Item Shop: shifted RIGHT of door (building bottom y:480, door cx ~118)
   {
     npcId: "felix_shop",
     x: 166,
     y: 466,
-    gender: "male",
-    primaryColor: 0x338844,
-    hairColor: 0x222222,
+    character: "bob",
+    facing: "down",
   },
 ];
 
@@ -166,7 +166,7 @@ const NPC_POSITIONS: NPCDef[] = [
 // ─────────────────────────────────────────────
 export class TownScene extends BaseScene {
   private player!: Phaser.GameObjects.Container;
-  private playerBody!: Phaser.GameObjects.Graphics;
+  private playerSprite!: Phaser.GameObjects.Sprite;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private wasd!: {
     up: Phaser.Input.Keyboard.Key;
@@ -199,7 +199,7 @@ export class TownScene extends BaseScene {
   private joystickGraphics!: Phaser.GameObjects.Graphics;
   private joystickOuter!: Phaser.GameObjects.Graphics;
   private isTouchDevice = false;
-  private playerFacing: "up" | "down" | "left" | "right" = "down";
+  private playerFacing: Facing = "down";
   // Transition lock — prevents double-firing (entry or exit) within 600ms
   private transitionLock = false;
   private interactionLocked = false;
@@ -427,31 +427,16 @@ export class TownScene extends BaseScene {
     g.lineStyle(3, 0x39ff14, 0.35);
     g.strokeRoundedRect(cx - 116, cy - 74, 232, 148, 18);
 
-    // Corner TREES replacing lime-green squares
-    const treePositions: [number, number][] = [
-      [cx - 96, cy - 58],
-      [cx + 94, cy - 58],
-      [cx - 96, cy + 58],
-      [cx + 94, cy + 58],
+    const bushPositions: [number, number, string, number][] = [
+      [cx - 96, cy - 58, LIMEZU.townBushRound, 1.1],
+      [cx + 94, cy - 58, LIMEZU.townBushRound, 1.1],
+      [cx - 96, cy + 58, LIMEZU.townBushRound, 1.1],
+      [cx + 94, cy + 58, LIMEZU.townBushRound, 1.1],
+      [cx - 54, cy - 70, LIMEZU.townBushWide, 1],
+      [cx + 58, cy + 72, LIMEZU.townBushWide, 1],
     ];
-    for (const [tx, ty] of treePositions) {
-      const tg = this.add.graphics();
-      tg.setDepth(4);
-      // Shadow
-      tg.fillStyle(0x000000, 0.2);
-      tg.fillEllipse(tx, ty + 10, 16, 5);
-      // Trunk
-      tg.fillStyle(0x8b4513, 1);
-      tg.fillRect(tx - 3, ty, 6, 9);
-      // Dark back canopy (depth illusion)
-      tg.fillStyle(0x145214, 1);
-      tg.fillCircle(tx + 1, ty - 6, 11);
-      // Main canopy
-      tg.fillStyle(0x228b22, 1);
-      tg.fillCircle(tx, ty - 7, 10);
-      // Highlight
-      tg.fillStyle(0x39c139, 0.6);
-      tg.fillCircle(tx - 2, ty - 10, 5);
+    for (const [tx, ty, key, scale] of bushPositions) {
+      this.add.image(tx, ty, key).setScale(scale).setDepth(4);
     }
 
     this.add
@@ -465,32 +450,18 @@ export class TownScene extends BaseScene {
       .setOrigin(0.5)
       .setDepth(5);
 
-    g.fillStyle(0x2a4a6a, 1);
-    g.fillCircle(cx, cy, 18);
-    g.lineStyle(3, 0x4488aa, 1);
-    g.strokeCircle(cx, cy, 18);
-    g.fillStyle(0x3399cc, 0.8);
-    g.fillCircle(cx, cy, 12);
-    g.fillStyle(0x88ccee, 0.9);
-    g.fillCircle(cx, cy, 5);
-    g.fillStyle(0xffffff, 0.7);
-    for (const [dx, dy] of [
-      [-8, -6],
-      [9, -4],
-      [0, -12],
-      [-5, 8],
-      [8, 7],
-    ] as [number, number][]) {
-      g.fillCircle(cx + dx, cy + dy, 2);
-    }
-
-    // Sign post
-    g.fillStyle(0x5a3a1a, 1);
-    g.fillRect(cx + 42, cy - 36, 4, 20);
-    g.fillStyle(0x2a2a0a, 1);
-    g.fillRect(cx + 34, cy - 42, 52, 12);
-    g.lineStyle(2, 0x39ff14, 0.8);
-    g.strokeRect(cx + 34, cy - 42, 52, 12);
+    this.add
+      .image(cx, cy + 8, LIMEZU.townFountain)
+      .setScale(0.95)
+      .setDepth(5);
+    this.add
+      .image(cx + 58, cy - 28, LIMEZU.townSignpost)
+      .setScale(1.1)
+      .setDepth(5);
+    this.add
+      .image(cx - 126, cy + 4, LIMEZU.townGardenArch)
+      .setScale(1.15)
+      .setDepth(5);
   }
 
   private drawBuildings(): void {
@@ -554,32 +525,16 @@ export class TownScene extends BaseScene {
     const bx = BENCH_X;
     const by = BENCH_Y;
 
-    const bg = this.add.graphics();
-    bg.setDepth(3);
-    // Seat plank (horizontal, side view)
-    bg.fillStyle(0x5a3a1a, 1);
-    bg.fillRect(bx - 14, by - 8, 40, 6);
-    // Back-rest (left side, vertical plank)
-    bg.fillStyle(0x4a2a10, 1);
-    bg.fillRect(bx - 14, by - 22, 6, 16);
-    // Legs (two visible in side view)
-    bg.fillStyle(0x3a2a10, 1);
-    bg.fillRect(bx - 10, by - 2, 4, 10); // left leg
-    bg.fillRect(bx + 16, by - 2, 4, 10); // right leg
-    // Armrest on back-rest top
-    bg.fillStyle(0x6a4a22, 1);
-    bg.fillRect(bx - 18, by - 22, 8, 4);
-    // NO yellow outline — removed per user request
+    this.add.image(bx, by, LIMEZU.townBench).setScale(1.55).setDepth(4);
 
     // Sam NPC container — permanently seated at bench, facing RIGHT
     // Position Sam on the bench seat — at bench seat height (by-8), slightly offset right
     const container = this.add.container(bx + 12, by - 6);
     container.setDepth(5);
 
-    const g = this.add.graphics();
-    // Draw Sam facing RIGHT (sideways seated pose)
-    this.drawMaleCharacterFacingRight(g, 0x4a7a5a, 0xaaaaaa);
-    container.add(g);
+    const sprite = createCharacterSprite(this, "bob", "right");
+    sprite.setScale(1.8);
+    container.add(sprite);
 
     const npc = NPCS.find((n) => n.id === "sam_sage");
     if (npc) {
@@ -687,13 +642,8 @@ export class TownScene extends BaseScene {
       const container = this.add.container(def.x, def.y);
       container.setDepth(5);
 
-      const g = this.add.graphics();
-      if (def.gender === "female") {
-        this.drawFemaleCharacter(g, def.primaryColor, def.hairColor);
-      } else {
-        this.drawMaleCharacter(g, def.primaryColor, def.hairColor);
-      }
-      container.add(g);
+      const sprite = createCharacterSprite(this, def.character, def.facing);
+      container.add(sprite);
 
       const npc = NPCS.find((n) => n.id === def.npcId);
       if (npc) {
@@ -727,10 +677,8 @@ export class TownScene extends BaseScene {
     const container = this.add.container(startX, startY);
     container.setDepth(5);
 
-    const g = this.add.graphics();
-    // Ed: messy auburn hair, brown casual jacket
-    this.drawMaleCharacter(g, 0x6a4a2a, 0xaa4422);
-    container.add(g);
+    const sprite = createCharacterSprite(this, "adam", "down");
+    container.add(sprite);
 
     const npc = NPCS.find((n) => n.id === "ed_recruiter");
     if (npc) {
@@ -871,179 +819,6 @@ export class TownScene extends BaseScene {
     }
   }
 
-  // ─────────────────────────────────────────────
-  // Character Drawing — Gender-Distinct Pixel Art
-  // ─────────────────────────────────────────────
-
-  /** Female character: longer hair, dress/skirt, narrower shoulders */
-  private drawFemaleCharacter(
-    g: Phaser.GameObjects.Graphics,
-    bodyColor: number,
-    hairColor: number,
-  ): void {
-    // Ground shadow
-    g.fillStyle(0x000000, 0.25);
-    g.fillEllipse(0, 14, 16, 5);
-
-    // Hair (back layer — flowing below shoulders)
-    g.fillStyle(hairColor, 1);
-    g.fillRect(-6, -20, 12, 6); // top hair
-    g.fillRect(-7, -16, 3, 14); // left side flowing hair
-    g.fillRect(4, -16, 3, 14); // right side flowing hair
-    g.fillRect(-6, -2, 3, 4); // hair tips left
-    g.fillRect(3, -2, 3, 4); // hair tips right
-
-    // Head
-    g.fillStyle(0xf5c5a0, 1);
-    g.fillRect(-5, -18, 10, 10);
-
-    // Eyes
-    g.fillStyle(0x333333, 1);
-    g.fillRect(-3, -14, 2, 2);
-    g.fillRect(1, -14, 2, 2);
-    // Eyelash accents
-    g.fillStyle(0x000000, 1);
-    g.fillRect(-4, -15, 1, 1);
-    g.fillRect(3, -15, 1, 1);
-
-    // Hair on top
-    g.fillStyle(hairColor, 1);
-    g.fillRect(-5, -20, 10, 4);
-    g.fillRect(-7, -18, 2, 4);
-    g.fillRect(5, -18, 2, 4);
-
-    // Dress body (wider at bottom)
-    g.fillStyle(bodyColor, 1);
-    g.fillRect(-5, -8, 10, 10); // torso
-    // Skirt (trapezoid)
-    g.fillRect(-7, 2, 14, 8); // skirt flare
-    g.fillRect(-6, 8, 12, 4); // skirt hem
-
-    // Arms (slimmer)
-    g.fillStyle(bodyColor, 1);
-    g.fillRect(-8, -7, 3, 7);
-    g.fillRect(5, -7, 3, 7);
-
-    // Hands
-    g.fillStyle(0xf5c5a0, 1);
-    g.fillRect(-8, 0, 3, 3);
-    g.fillRect(5, 0, 3, 3);
-
-    // Legs (visible below skirt)
-    g.fillStyle(0xf5c5a0, 1);
-    g.fillRect(-4, 12, 3, 5);
-    g.fillRect(1, 12, 3, 5);
-
-    // Shoes
-    g.fillStyle(0x3a2a5a, 1);
-    g.fillRect(-5, 17, 5, 3);
-    g.fillRect(0, 17, 5, 3);
-  }
-
-  /** Male character facing RIGHT — side/profile view for seated pose */
-  private drawMaleCharacterFacingRight(
-    g: Phaser.GameObjects.Graphics,
-    bodyColor: number,
-    hairColor: number,
-  ): void {
-    // Shadow under bench area
-    g.fillStyle(0x000000, 0.2);
-    g.fillEllipse(2, 8, 14, 4);
-
-    // Head (right-facing profile — slightly to the right)
-    g.fillStyle(0xf5c5a0, 1);
-    g.fillRect(0, -14, 9, 9);
-
-    // Short hair
-    g.fillStyle(hairColor, 1);
-    g.fillRect(0, -15, 9, 4); // top
-    g.fillRect(7, -13, 3, 5); // back of head
-
-    // Eye (single visible in profile)
-    g.fillStyle(0x000000, 1);
-    g.fillRect(5, -11, 2, 2);
-
-    // Nose hint
-    g.fillStyle(0xd4a882, 1);
-    g.fillRect(1, -10, 2, 1);
-
-    // Body/torso (side view — compressed width)
-    g.fillStyle(bodyColor, 1);
-    g.fillRect(-2, -5, 8, 8);
-
-    // Arm resting forward (sitting)
-    g.fillStyle(bodyColor, 1);
-    g.fillRect(3, -2, 6, 4);
-
-    // Hands
-    g.fillStyle(0xf5c5a0, 1);
-    g.fillRect(8, -1, 3, 3);
-
-    // Legs (bent — knees up, sitting on bench)
-    g.fillStyle(0x1a2a4a, 1);
-    g.fillRect(-2, 3, 7, 5); // thigh
-    g.fillRect(3, 5, 5, 4); // lower leg (bent forward)
-
-    // Shoes
-    g.fillStyle(0x4a3a2a, 1);
-    g.fillRect(4, 8, 6, 3);
-  }
-
-  /** Male character: short hair, pants, wider shoulders */
-  private drawMaleCharacter(
-    g: Phaser.GameObjects.Graphics,
-    bodyColor: number,
-    hairColor: number,
-  ): void {
-    // Ground shadow
-    g.fillStyle(0x000000, 0.25);
-    g.fillEllipse(0, 14, 18, 5);
-
-    // Head
-    g.fillStyle(0xf5c5a0, 1);
-    g.fillRect(-5, -16, 10, 10);
-
-    // Short hair
-    g.fillStyle(hairColor, 1);
-    g.fillRect(-5, -17, 10, 5); // top
-    g.fillRect(-6, -15, 2, 4); // sideburn left
-    g.fillRect(4, -15, 2, 4); // sideburn right
-
-    // Eyes
-    g.fillStyle(0x000000, 1);
-    g.fillRect(-3, -13, 2, 2);
-    g.fillRect(1, -13, 2, 2);
-
-    // Body (shirt/jacket) — wider shoulders
-    g.fillStyle(bodyColor, 1);
-    g.fillRect(-6, -6, 12, 10);
-
-    // Collar/neckline detail
-    g.fillStyle(0xffffff, 0.3);
-    g.fillRect(-2, -6, 4, 3);
-
-    // Arms — slightly wider
-    g.fillStyle(bodyColor, 1);
-    g.fillRect(-9, -5, 3, 8);
-    g.fillRect(6, -5, 3, 8);
-
-    // Hands
-    g.fillStyle(0xf5c5a0, 1);
-    g.fillRect(-9, 3, 3, 3);
-    g.fillRect(6, 3, 3, 3);
-
-    // Pants
-    g.fillStyle(0x1a2a4a, 1);
-    g.fillRect(-5, 4, 4, 7);
-    g.fillRect(1, 4, 4, 7);
-
-    // Shoes
-    g.fillStyle(0x4a3a2a, 1);
-    g.fillRect(-6, 11, 5, 3);
-    g.fillRect(1, 11, 5, 3);
-  }
-
-  // ─────────────────────────────────────────────
   // Player
   // ─────────────────────────────────────────────
   private createPlayer(spawnX?: number, spawnY?: number): void {
@@ -1052,9 +827,8 @@ export class TownScene extends BaseScene {
     this.player = this.add.container(sx, sy);
     this.player.setDepth(6);
 
-    this.playerBody = this.add.graphics();
-    this.drawPlayerCharacter(this.playerBody);
-    this.player.add(this.playerBody);
+    this.playerSprite = createCharacterSprite(this, "alex", this.playerFacing);
+    this.player.add(this.playerSprite);
 
     const glow = this.add.graphics();
     glow.fillStyle(0x39ff14, 0.12);
@@ -1063,66 +837,6 @@ export class TownScene extends BaseScene {
     this.player.sendToBack(glow);
   }
 
-  private drawPlayerCharacter(
-    g: Phaser.GameObjects.Graphics,
-    facing: "up" | "down" | "left" | "right" = "down",
-  ): void {
-    g.clear();
-    const flip = facing === "left";
-    const sx = flip ? -1 : 1;
-
-    // Shadow
-    g.fillStyle(0x000000, 0.3);
-    g.fillEllipse(0, 12, 18, 6);
-
-    if (hasBackpack()) {
-      g.fillStyle(0x8c5b2e, 1);
-      g.fillRoundedRect(-9, -8, 18, 18, 3);
-      g.lineStyle(2, 0xffbf00, 1);
-      g.strokeRoundedRect(-9, -8, 18, 18, 3);
-    }
-
-    // Body — green outfit
-    g.fillStyle(0x226622, 1);
-    g.fillRect(-6 * sx, -6, 12, 10);
-
-    // Head
-    g.fillStyle(0xf5c5a0, 1);
-    g.fillRect(-5, -16, 10, 10);
-
-    // Hair (darker cap)
-    g.fillStyle(0x5a3a10, 1);
-    g.fillRect(-5, -17, 10, 4);
-    g.fillRect(-6, -15, 2, 3);
-    g.fillRect(4, -15, 2, 3);
-
-    // Eyes
-    g.fillStyle(0x000000, 1);
-    if (facing !== "up") {
-      const eyeOff = facing === "right" ? 2 : facing === "left" ? -2 : 0;
-      g.fillRect(-3 + eyeOff, -13, 2, 2);
-      g.fillRect(1 + eyeOff, -13, 2, 2);
-    }
-
-    // Legs
-    g.fillStyle(0x1a1a5a, 1);
-    g.fillRect(-5, 4, 4, 6);
-    g.fillRect(1, 4, 4, 6);
-
-    // Shoes
-    g.fillStyle(0x4a3a2a, 1);
-    g.fillRect(-6, 10, 5, 3);
-    g.fillRect(1, 10, 5, 3);
-
-    // Sword
-    g.fillStyle(0xaaaaaa, 1);
-    const toolX = facing === "left" ? -12 : 8;
-    g.fillRect(toolX, -2, 2, 8);
-    g.fillStyle(0xffaa00, 1);
-    g.fillRect(toolX - 1, -2, 4, 3);
-  }
-
-  // ─────────────────────────────────────────────
   // Input
   // ─────────────────────────────────────────────
   private setupInput(): void {
@@ -1277,8 +991,13 @@ export class TownScene extends BaseScene {
       }
     }
 
+    setCharacterMotion(
+      this.playerSprite,
+      "alex",
+      this.playerFacing,
+      dx !== 0 || dy !== 0,
+    );
     if (dx !== 0 || dy !== 0) {
-      this.drawPlayerCharacter(this.playerBody, this.playerFacing);
       GameBridge.emit("playerMoved", { x: this.player.x, y: this.player.y });
     }
   }
